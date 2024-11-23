@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 type Position = { x: number; y: number };
+type TimeComplexity = 'O(1)' | 'O(log n)' | 'O(n)' | 'O(n log n)' | 'O(n²)' | 'O(2ⁿ)';
 
 interface VisualizerProps {
     width: number;
@@ -10,7 +11,7 @@ interface VisualizerProps {
     cellSize: number;
     start: Position;
     end: Position;
-    displaySpeed: number; // Speed in milliseconds
+    timeComplexity: TimeComplexity;
 }
 
 const BFSVisualizer: React.FC<VisualizerProps> = ({
@@ -19,43 +20,68 @@ const BFSVisualizer: React.FC<VisualizerProps> = ({
     cellSize,
     start,
     end,
-    displaySpeed,
+    timeComplexity,
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [grid, setGrid] = useState<string[][]>(
         Array.from({ length: height }, () => Array(width).fill('.'))
     );
+    const isRunningRef = useRef(true);
+
+    const getDisplaySpeed = (complexity: TimeComplexity): number => {
+        const n = Math.max(width, height);
+
+        switch (complexity) {
+            case 'O(1)':
+                return 50;
+            case 'O(log n)':
+                return Math.max(50, Math.log2(n) * 30);
+            case 'O(n)':
+                return Math.max(100, n * 15);
+            case 'O(n log n)':
+                return Math.max(150, n * Math.log2(n) * 10);
+            case 'O(n²)':
+                return Math.max(200, Math.pow(n, 2) * 5);
+            case 'O(2ⁿ)':
+                return Math.max(250, Math.pow(1.5, n) * 20);
+            default:
+                return 100;
+        }
+    };
+
+    const drawGrid = (ctx: CanvasRenderingContext2D, gridToDraw: string[][]) => {
+        ctx.clearRect(0, 0, width * cellSize, height * cellSize);
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const cell = gridToDraw[y][x];
+                ctx.fillStyle = getCellColor(cell);
+                ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            }
+        }
+    };
+
+    const getCellColor = (cell: string): string => {
+        switch (cell) {
+            case 'S':
+                return '#80EF80'; // Start
+            case 'E':
+                return '#054215'; // End
+            case '#':
+                return '#04D52F'; // Visited
+            case '*':
+                return '#049948'; // Exploring
+            default:
+                return '#000'; // Default
+        }
+    };
 
     useEffect(() => {
         const ctx = canvasRef.current?.getContext('2d');
         if (!ctx) return;
 
-        const drawGrid = (gridToDraw: string[][]) => {
-            ctx.clearRect(0, 0, width * cellSize, height * cellSize);
-
-            for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                    const cell = gridToDraw[y][x];
-                    ctx.fillStyle = getCellColor(cell);
-
-                    ctx.fillRect(
-                        x * cellSize,
-                        y * cellSize,
-                        cellSize,
-                        cellSize
-                    );
-                    ctx.strokeRect(
-                        x * cellSize,
-                        y * cellSize,
-                        cellSize,
-                        cellSize
-                    );
-                }
-            }
-        };
-
         const runBFS = async () => {
-            // Create a local mutable grid copy
             const localGrid = grid.map((row) => [...row]);
             const visited = Array.from({ length: height }, () =>
                 Array(width).fill(false)
@@ -67,15 +93,19 @@ const BFSVisualizer: React.FC<VisualizerProps> = ({
             localGrid[start.y][start.x] = 'S';
             localGrid[end.y][end.x] = 'E';
 
-            while (queue.length > 0) {
+            const displaySpeed = getDisplaySpeed(timeComplexity);
+
+            while (queue.length > 0 && isRunningRef.current) {
                 const current = queue.shift()!;
-                if (current.x === end.x && current.y === end.y) break;
+                if (current.x === end.x && current.y === end.y) {
+                    break;
+                }
 
                 if (localGrid[current.y][current.x] !== 'S' && localGrid[current.y][current.x] !== 'E') {
                     localGrid[current.y][current.x] = '#';
                 }
 
-                drawGrid(localGrid);
+                drawGrid(ctx, localGrid);
                 await new Promise((resolve) => setTimeout(resolve, displaySpeed));
 
                 const neighbors = getNeighbors(current, localGrid);
@@ -90,9 +120,7 @@ const BFSVisualizer: React.FC<VisualizerProps> = ({
                 }
             }
 
-            // Update state only once after BFS completes
-            setGrid(localGrid);
-            drawGrid(localGrid);
+            drawGrid(ctx, localGrid);
         };
 
         const getNeighbors = (pos: Position, localGrid: string[][]): Position[] => {
@@ -115,25 +143,26 @@ const BFSVisualizer: React.FC<VisualizerProps> = ({
                 );
         };
 
-        const getCellColor = (cell: string): string => {
-            switch (cell) {
-                case 'S':
-                    return '#80EF80';
-                case 'E':
-                    return '#054215';
-                case '#':
-                    return '#04D52F';
-                case '*':
-                    return '#049948';
-                default:
-                    return '#000';
-            }
-        };
-
         runBFS();
-    }, [start, end, displaySpeed, width, height, cellSize]); // Dependencies include start, end, and displaySpeed
 
-    return <canvas ref={canvasRef} width={width * cellSize} height={height * cellSize} />;
+        return () => {
+            isRunningRef.current = false;
+        };
+    }, [start, end, timeComplexity, width, height, cellSize]);
+
+    return (
+        <div className="relative">
+            <canvas 
+                ref={canvasRef} 
+                width={width * cellSize} 
+                height={height * cellSize} 
+                className="rounded-lg"
+            />
+            <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded">
+                {timeComplexity}
+            </div>
+        </div>
+    );
 };
 
 export default BFSVisualizer;

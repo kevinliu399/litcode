@@ -3,32 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 
-const SortingVisualizer: React.FC = () => {
+const SortingVisualizer: React.FC<{ algorithm: 'bubble' | 'selection' | 'insertion' }> = ({ algorithm }) => {
     const [numbers, setNumbers] = useState<number[]>([]);
     const [sorting, setSorting] = useState<boolean>(false);
     const [sortedIndices, setSortedIndices] = useState<Set<number>>(new Set());
     const [currentSwap, setCurrentSwap] = useState<[number, number] | null>(null);
-    const [userCode, setUserCode] = useState<string>(`// Your sorting function should:
-// 1. Take an array as parameter
-// 2. Use updateVisualization(array, indices) to show each step
-// 3. Use markSorted(index) to mark an index as sorted
-// 4. Return the sorted array
-
-async function sort(arr) {
-  // Example: Bubble Sort
-  for (let i = 0; i < arr.length; i++) {
-    for (let j = 0; j < arr.length - i - 1; j++) {
-      if (arr[j] > arr[j + 1]) {
-        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
-        await updateVisualization([...arr], [j, j + 1]);
-      }
-    }
-    markSorted(arr.length - i - 1);
-  }
-  return arr;
-}`);
-    const [error, setError] = useState<string>('');
-    const delay = 500;
+    const delay = 1000;
 
     useEffect(() => {
         resetArray();
@@ -38,7 +18,6 @@ async function sort(arr) {
         setNumbers(shuffleArray(Array.from({ length: 10 }, (_, i: number) => i + 1)));
         setSortedIndices(new Set());
         setCurrentSwap(null);
-        setError('');
     };
 
     const shuffleArray = (array: number[]): number[] => {
@@ -63,56 +42,88 @@ async function sort(arr) {
         setSortedIndices((prev) => new Set(prev).add(index));
     };
 
-    const runUserCode = async (): Promise<void> => {
+    const runSort = async (): Promise<void> => {
+        setSorting(true);
+        setSortedIndices(new Set());
+        setCurrentSwap(null);
+
         try {
-            setSorting(true);
-            setError('');
-            setSortedIndices(new Set());
-            setCurrentSwap(null);
+            const arrayCopy = [...numbers];
 
-            // Safe context for user code execution
-            const context: Record<string, unknown> = {
-                updateVisualization,
-                markSorted,
-                setTimeout,
-                console: { log: console.log },
-            };
-
-            const functionBody = `
-                "use strict";
-                return (${userCode})
-            `;
-            const userFunction = new Function(
-                ...Object.keys(context),
-                functionBody
-            )(...Object.values(context));
-
-            // Execute user sorting function
-            const result = await userFunction([...numbers]);
-
-            // Verify if the array is sorted
-            const isSorted = result.every(
-                (num: number, i: number) => i === 0 || result[i - 1] <= result[i]
-            );
-            if (!isSorted) {
-                throw new Error('Array is not correctly sorted!');
+            if (algorithm === 'bubble') {
+                await bubbleSort(arrayCopy);
+            } else if (algorithm === 'selection') {
+                await selectionSort(arrayCopy);
+            } else if (algorithm === 'insertion') {
+                await insertionSort(arrayCopy);
             }
 
-            // Mark all indices as sorted
-            setSortedIndices(new Set(result.map((_: any, i: number) => i)));
+            setSortedIndices(new Set(arrayCopy.map((_, i) => i)));
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'An error occurred');
-            console.error(err);
+            console.error('Sorting error:', err);
         } finally {
             setSorting(false);
         }
     };
 
+    const bubbleSort = async (arr: number[]): Promise<void> => {
+        for (let i = 0; i < arr.length; i++) {
+            for (let j = 0; j < arr.length - i - 1; j++) {
+                if (arr[j] > arr[j + 1]) {
+                    [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+                    await updateVisualization([...arr], [j, j + 1]);
+                }
+            }
+            markSorted(arr.length - i - 1);
+        }
+    };
+
+    const selectionSort = async (arr: number[]): Promise<void> => {
+        for (let i = 0; i < arr.length; i++) {
+            let minIdx = i;
+            for (let j = i + 1; j < arr.length; j++) {
+                if (arr[j] < arr[minIdx]) {
+                    minIdx = j;
+                }
+            }
+            if (minIdx !== i) {
+                [arr[i], arr[minIdx]] = [arr[minIdx], arr[i]];
+                await updateVisualization([...arr], [i, minIdx]);
+            }
+            markSorted(i);
+        }
+    };
+
+    const insertionSort = async (arr: number[]): Promise<void> => {
+        for (let i = 1; i < arr.length; i++) {
+            let j = i;
+            while (j > 0 && arr[j] < arr[j - 1]) {
+                [arr[j], arr[j - 1]] = [arr[j - 1], arr[j]];
+                await updateVisualization([...arr], [j, j - 1]);
+                j--;
+            }
+    
+            // Mark the current element as sorted if it's in its final position
+            for (let k = 0; k <= i; k++) {
+                if (arr[k] === Math.min(...arr.slice(k))) {
+                    markSorted(k);
+                }
+            }
+        }
+    
+        // After sorting, ensure all elements are marked as sorted
+        for (let i = 0; i < arr.length; i++) {
+            markSorted(i);
+        }
+    };
+    
+    
+
     return (
         <div className="flex flex-col items-center max-w-4xl mx-auto p-4">
             <Card className="w-full p-6">
                 <h1 className="text-2xl font-bold mb-4 text-black">
-                    Interactive Sorting Visualizer
+                    Interactive Sorting Visualizer ({algorithm} sort)
                 </h1>
 
                 <div className="flex items-center justify-center space-x-4 mb-6 min-h-24">
@@ -134,26 +145,9 @@ async function sort(arr) {
                     ))}
                 </div>
 
-                <div className="mb-4">
-                    <textarea
-                        value={userCode}
-                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-                            setUserCode(e.target.value)
-                        }
-                        className="w-full h-64 p-4 font-mono text-sm border rounded text-black"
-                        disabled={sorting}
-                    />
-                </div>
-
-                {error && (
-                    <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
-                        {error}
-                    </div>
-                )}
-
                 <div className="flex space-x-4">
                     <button
-                        onClick={runUserCode}
+                        onClick={runSort}
                         disabled={sorting}
                         className={`px-4 py-2 rounded ${
                             sorting
@@ -161,7 +155,7 @@ async function sort(arr) {
                                 : 'bg-blue-500 hover:bg-blue-600'
                         } text-white`}
                     >
-                        {sorting ? 'Running...' : 'Run Sort'}
+                        {sorting ? 'Sorting...' : 'Start Sort'}
                     </button>
 
                     <button
