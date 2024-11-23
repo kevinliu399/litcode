@@ -18,7 +18,7 @@
       "@/*": ["./*"], // Existing alias for root
       "@/components/*": ["components/*"], // Alias for components
       "@/lib/*": ["lib/*"], // Alias for libraries
-      "@/models/*": ["models/*"], // Alias for models
+      "@/models/*": ["lib/dabatase/models/*"], // Alias for models
       "@/services/*": ["services/*"], // Alias for services
       "@/types/*": ["types/*"], // Alias for custom types
       "@/utils/*": ["utils/*"] // Alias for utilities

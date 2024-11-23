@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@clerk/clerk-sdk-node": "^5.0.69",
     "@clerk/nextjs": "^6.5.0",
     "@monaco-editor/react": "^4.6.0",
     "@radix-ui/react-dialog": "^1.1.2",
@@ -20,9 +21,11 @@
     "dotenv": "^16.4.5",
     "lucide-react": "^0.460.0",
     "mongodb": "^6.11.0",
+    "mongoose": "^8.8.2",
     "next": "15.0.3",
     "react": "19.0.0-rc-66855b96-20241106",
     "react-dom": "19.0.0-rc-66855b96-20241106",
+    "svix": "^1.41.0",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.1"

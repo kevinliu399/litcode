@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { MongoClient } from 'mongodb';
-import { Question } from '@/models/question';
+import { Question } from '@/lib/dabatase/models/question';
 
 const MONGO_DB_URI = process.env.MONGO_DB_KEY || '';
 
