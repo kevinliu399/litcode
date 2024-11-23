@@ -4,8 +4,89 @@ import EditorComponent from '../components/EditorComponent';
 import { Check, Hourglass, Swords } from 'lucide-react';
 import SidebarBattle from '../components/SideBarBattle';
 import { Badge } from "@/components/ui/badge";
+import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 
 const Battle = () => {
+  const [opponentName, setOpponentName] = useState<string>("");
+  const [timer, setTimer] = useState<string>("00:00:00");
+  const [testsPassed, setTestsPassed] = useState<number>(0);
+  const [totalTests, setTotalTests] = useState<number>(23);
+  const [isConnected, setIsConnected] = useState(false);
+  const [matchFound, setMatchFound] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
+  const timerRef = useRef<NodeJS.Timeout>();
+  const startTimeRef = useRef<number>(0);
+  const router = useRouter();
+
+  useEffect(() => {
+    const selectedAlgorithm = localStorage.getItem('selectedAlgorithm');
+    if (!selectedAlgorithm) {
+      router.push('/'); // Redirect back to lobby if no algorithm selected
+      return;
+    }
+
+    const ws = new WebSocket("https://your-ngrok-url-here");
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      setIsConnected(true);
+      ws.send(JSON.stringify({
+        type: "QUEUE_JOIN",
+        algorithm: selectedAlgorithm
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      switch (data.type) {
+        case "MATCH_FOUND":
+          setMatchFound(true);
+          setOpponentName(data.opponent);
+          startTimeRef.current = Date.now();
+          startTimer();
+          break;
+          
+        case "SCORE_UPDATE":
+          setTestsPassed(data.testsPassed);
+          setTotalTests(data.totalTests);
+          break;
+          
+        case "GAME_OVER":
+          clearInterval(timerRef.current);
+          // Handle game over - you can add a modal or redirect
+          break;
+      }
+    };
+
+    ws.onclose = () => {
+      setIsConnected(false);
+      clearInterval(timerRef.current);
+    };
+
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+      clearInterval(timerRef.current);
+    };
+  }, []);
+
+  const startTimer = () => {
+    timerRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTimeRef.current;
+      const hours = Math.floor(elapsed / 3600000);
+      const minutes = Math.floor((elapsed % 3600000) / 60000);
+      const seconds = Math.floor((elapsed % 60000) / 1000);
+      
+      setTimer(
+        `${hours.toString().padStart(2, '0')}:${minutes
+          .toString()
+          .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      );
+    }, 1000);
+  };
   return (
     <div className='relative h-screen '>
       {/* Background Effects */}
@@ -22,7 +103,7 @@ const Battle = () => {
             <Swords size={20} className="text-lime-400 mr-3" />
             <span className="font-medium">Battling:</span>
             <span className="text-lime-400 ml-2 font-bold hover:text-lime-300 transition-colors">
-              orlolol
+            {matchFound ? opponentName : 'Finding opponent...'}
             </span>
           </div>
         </div>
@@ -32,7 +113,7 @@ const Battle = () => {
           <div className="flex items-center space-x-2 text-white/80">
             <span className="font-medium">Timer</span>
             <Hourglass size={16} className="text-lime-400" />
-            <span className="font-mono text-lime-400">00:00:00</span>
+            <span className="font-mono text-lime-400"><p>{timer}</p></span>
           </div>
           <div className="absolute -top-1 -right-1">
             <span className="relative flex h-3 w-3">
@@ -48,13 +129,22 @@ const Battle = () => {
           className="bg-white/5 border-white/10 px-4 py-2 text-sm hover:bg-white/10 transition-all cursor-default"
         >
           <Check size={16} className="text-lime-400 mr-2" />
-          <span className="font-medium">13/23 tests passed</span>
+          <span className="font-medium">{testsPassed}/{totalTests} tests passed</span>
         </Badge>
       </div>
 
       {/* Main Content */}
       <div className="flex flex-row w-full justify-center mt-4 px-4">
-        <EditorComponent />
+      <EditorComponent 
+          onCodeSubmit={(code: any) => {
+            if (wsRef.current?.readyState === WebSocket.OPEN) {
+              wsRef.current.send(JSON.stringify({
+                type: "CODE_SUBMIT",
+                code: code
+              }));
+            }
+          }}
+        />
         <SidebarBattle />
       </div>
     </div>

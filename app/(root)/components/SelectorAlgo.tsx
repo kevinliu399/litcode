@@ -1,8 +1,27 @@
 import { Card, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronRight, Swords, Code, Binary } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from 'react';
+
 
 const AlgorithmSelector = () => {
+    const [algorithm, setAlgorithm] = useState<string>("");
+    const [isQueuing, setIsQueuing] = useState(false);
+    const router = useRouter();
+
+    const startBattle = () => {
+        if (!algorithm) {
+            alert("Please select an algorithm type first!");
+            return;
+        }
+        
+        setIsQueuing(true);
+        // Store algorithm preference in localStorage for the battle page
+        localStorage.setItem('selectedAlgorithm', algorithm);
+        router.push('/battle');
+        return 
+    };
     return (
         <div className="transform transition-all duration-700">
             <Card className="border border-white/10 bg-white/5 backdrop-blur-sm p-8">
@@ -48,11 +67,20 @@ const AlgorithmSelector = () => {
                         </span>
                     </h2>
 
-                    <button className="group flex items-center space-x-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-4 py-3 transition-all duration-300 w-full">
+                    <button 
+                        onClick={startBattle}
+                        disabled={isQueuing}
+                        className="group flex items-center space-x-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-4 py-3 transition-all duration-300 w-full"
+                    >
                         <Swords size={18} className="text-lime-400" />
                         <span className="text-white/80 group-hover:text-white/100 transition-colors">
                             Start Battle
                         </span>
+                        
+                    
+                        <div className={`text-md ${isQueuing ? 'text-gray-400' : 'text-gray-500'} font-normal`}>
+                            {isQueuing ? 'Queuing...' : 'Start Battle'}
+                        </div>
                         <ChevronRight size={18} className="text-lime-400 ml-auto transform group-hover:translate-x-1 transition-transform" />
                     </button>
                 </div>
