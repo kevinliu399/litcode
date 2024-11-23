@@ -61,6 +61,7 @@ export async function POST(req: Request) {
       lastName: last_name,
       photo: image_url,
       email: email_addresses[0].email_address,
+      elo: 1000,
     };
   
     console.log("Creating user with data:", user);
