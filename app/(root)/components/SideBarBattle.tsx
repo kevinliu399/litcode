@@ -132,7 +132,6 @@ function SidebarBattle() {
                 cellSize={30}            // Size of each cell in pixels
                 start={{ x: 0, y: 0 }}   // Starting position
                 end={{ x: 6, y: 6 }}   // Ending position
-                timeComplexity="O(n²)"   // Complexity label to display
             />
             </div>
           </div>

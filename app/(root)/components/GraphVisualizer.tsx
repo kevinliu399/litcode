@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 type Position = { x: number; y: number };
-type TimeComplexity = 'O(1)' | 'O(log n)' | 'O(n)' | 'O(n log n)' | 'O(n²)' | 'O(2ⁿ)';
 type CellType = '.' | 'S' | 'E' | '#' | '*' | 'P';
 
 interface VisualizerProps {
@@ -12,7 +11,6 @@ interface VisualizerProps {
     cellSize: number;
     start: Position;
     end: Position;
-    timeComplexity: TimeComplexity;
 }
 
 const BFSVisualizer: React.FC<VisualizerProps> = ({
@@ -21,7 +19,6 @@ const BFSVisualizer: React.FC<VisualizerProps> = ({
     cellSize,
     start,
     end,
-    timeComplexity,
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationFrameRef = useRef<number>();
@@ -31,27 +28,14 @@ const BFSVisualizer: React.FC<VisualizerProps> = ({
         Array.from({ length: height }, () => Array(width).fill('.'))
     );
 
-    const getDisplaySpeed = (complexity: TimeComplexity): number => {
-        const n = Math.max(width, height);
-        switch (complexity) {
-            case 'O(1)': return 100;
-            case 'O(log n)': return Math.max(100, Math.log2(n) * 20);
-            case 'O(n)': return Math.max(100, n * 10);
-            case 'O(n log n)': return Math.max(100, n * Math.log2(n) * 5);
-            case 'O(n²)': return Math.max(100, Math.pow(n, 1.5) * 2);
-            case 'O(2ⁿ)': return Math.max(100, Math.pow(1.2, n) * 10);
-            default: return 100;
-        }
-    };
-
     const getCellColor = (cell: CellType): string => {
         switch (cell) {
-            case 'S': return '#22c55e'; // Start (green)
-            case 'E': return '#ef4444'; // End (red)
-            case '#': return '#0ea5e9'; // Visited (blue)
-            case '*': return '#60a5fa'; // Exploring (light blue)
-            case 'P': return '#22c55e'; // Path (green)
-            default: return '#1e293b'; // Default (dark slate)
+            case 'S': return '#CBC3E3'; // Start 
+            case 'E': return '#ef4444'; // End 
+            case '#': return '#04D52F'; // Visited 
+            case '*': return '#049948'; // Exploring 
+            case 'P': return '#CBC3E3'; // Path 
+            default: return '#1e293b'; // Default 
         }
     };
 
@@ -128,7 +112,7 @@ const BFSVisualizer: React.FC<VisualizerProps> = ({
             localGrid[start.y][start.x] = 'S';
             localGrid[end.y][end.x] = 'E';
             
-            const displaySpeed = getDisplaySpeed(timeComplexity);
+            const displaySpeed = 100;
             let foundPath = false;
 
             while (queue.length > 0 && isRunningRef.current) {
@@ -197,7 +181,7 @@ const BFSVisualizer: React.FC<VisualizerProps> = ({
                 cancelAnimationFrame(animationFrameRef.current);
             }
         };
-    }, [start, end, timeComplexity, width, height, cellSize]);
+    }, [start, end, width, height, cellSize]);
 
     return (
         <div className="relative">
@@ -207,9 +191,6 @@ const BFSVisualizer: React.FC<VisualizerProps> = ({
                 height={height * cellSize} 
                 className="rounded-lg"
             />
-            <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 rounded">
-                {timeComplexity}
-            </div>
         </div>
     );
 };
