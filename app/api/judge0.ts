@@ -1,30 +1,47 @@
 // pages/api/judge0.ts
-import axios from 'axios';
 
-const JUDGE0_API_URL = 'https://api.jdoodle.com/v1/execute'; // Public API URL (or your own server)
-const API_KEY = 'your_judge0_api_key';  // Replace this with your actual API key if needed
+import axios from 'axios';
+import * as dotenv from 'dotenv'
+dotenv.config()
+const judge0_api_key = process.env.judge0_api_key;
+
+const RAPIDAPI_HOST = 'judge0-ce.p.rapidapi.com'; // RapidAPI Judge0 host
+const RAPIDAPI_KEY = judge0_api_key; // Replace with your RapidAPI key
 
 export default async function handler(req: any, res: any) {
   if (req.method === 'POST') {
-    const { language, code } = req.body;
+    const { code, language_id, stdin, expected_output } = req.body;
 
     try {
-      const response = await axios.post(JUDGE0_API_URL, {
-        script: code,
-        language: language,
-        // Additional parameters like versionIndex, etc.
-        stdin: '', // If the code needs input
-        // Optionally add any required environment variables
-        clientId: API_KEY,
-        // Example: add more options based on Judge0 documentation
-      });
+      const response = await axios.post(
+        `https://${RAPIDAPI_HOST}/submissions`,
+        {
+          source_code: code,
+          language_id: language_id, // Example: 4 for C
+          stdin: stdin || '',
+          expected_output: expected_output || '',
+          cpu_time_limit: 1, // Example time limit (adjustable)
+          memory_limit: 128000, // Memory limit (adjustable)
+          number_of_runs: 1,
+          redirect_stderr_to_stdout: true, // Optionally redirect stderr to stdout
+          wall_time_limit: 10, // Optional time limits
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-RapidAPI-Host': RAPIDAPI_HOST,
+            'X-RapidAPI-Key': RAPIDAPI_KEY,
+          },
+        }
+      );
 
-      return res.status(200).json(response.data);
+      const { token } = response.data;
+      return res.status(200).json({ token });
     } catch (error) {
-      console.error('Error executing code:', error);
-      return res.status(500).json({ error: 'Code execution failed' });
+      console.error('Error creating submission:', error);
+      return res.status(500).json({ error: 'Failed to submit code' });
     }
   } else {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 }
