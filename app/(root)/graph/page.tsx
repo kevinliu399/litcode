@@ -22,6 +22,7 @@ import {
     Button
 } from "@/components/ui/button";
 import BFSVisualizer from '../components/Visualizer'; 
+import SortingVisualizer from '../components/SortingVisualizer';
 
 export default function GraphPage() {
     return (
@@ -64,7 +65,7 @@ export default function GraphPage() {
                     </Drawer>
                 </div>
 
-                <div className="mt-8 flex justify-center">
+                <div className="mt-8 flex justify-left">
                     <BFSVisualizer  // Change Grid settings here
                         width={10}
                         height={8}
@@ -73,6 +74,9 @@ export default function GraphPage() {
                         end={{ x: 7, y: 6 }}
                         displaySpeed={100} // Pause duration in ms
                     />
+                </div>
+                <div className="mt-8 flex justify-right">
+                    <SortingVisualizer />
                 </div>
             </div>
         </div>
