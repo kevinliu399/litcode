@@ -71,7 +71,6 @@ export async function GET(request: Request) {
       memory
     } = response.data;
 
-    // Only return final results if status is not "Processing" or "In Queue"
     const result = {
       status: status.description,
       executionTime: time ? `${time} seconds` : 'N/A',
