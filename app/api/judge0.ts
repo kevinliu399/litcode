@@ -1,5 +1,3 @@
-// pages/api/judge0.ts
-
 import axios from 'axios';
 import * as dotenv from 'dotenv'
 dotenv.config()
@@ -17,13 +15,13 @@ export default async function handler(req: any, res: any) {
         `https://${RAPIDAPI_HOST}/submissions`,
         {
           source_code: code,
-          language_id: language_id, // Example: 4 for C
+          language_id: language_id, // 
           stdin: stdin || '',
           expected_output: expected_output || '',
           cpu_time_limit: 1, // Example time limit (adjustable)
           memory_limit: 128000, // Memory limit (adjustable)
           number_of_runs: 1,
-          redirect_stderr_to_stdout: true, // Optionally redirect stderr to stdout
+          redirect_stderr_to_stdout: true, 
           wall_time_limit: 10, // Optional time limits
         },
         {
