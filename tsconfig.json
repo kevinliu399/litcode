@@ -13,15 +13,23 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "baseUrl": ".", // Ensure relative paths work correctly
+    "paths": {
+      "@/*": ["./*"], // Existing alias for root
+      "@/components/*": ["components/*"], // Alias for components
+      "@/lib/*": ["lib/*"], // Alias for libraries
+      "@/models/*": ["models/*"], // Alias for models
+      "@/services/*": ["services/*"], // Alias for services
+      "@/types/*": ["types/*"], // Alias for custom types
+      "@/utils/*": ["utils/*"] // Alias for utilities
+    },
+    "typeRoots": ["./types", "./node_modules/@types"], // Include custom types directory
     "plugins": [
       {
         "name": "next"
       }
-    ],
-    "paths": {
-      "@/*": ["./*"]
-    }
+    ]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "types/**/*.d.ts"], // Include custom types
   "exclude": ["node_modules"]
 }
