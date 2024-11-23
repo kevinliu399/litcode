@@ -1,19 +1,32 @@
 import React, { useState } from 'react';
 import Editor from '@monaco-editor/react';
 import axios from 'axios';
+import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Loader2, Check } from 'lucide-react';
 
-const EditorComponent = () => {
-  const [code, setCode] = useState<string>(''); // The code the user writes
-  const [output, setOutput] = useState<string>(''); // The output from Judge0
-  const [isExecuting, setIsExecuting] = useState(false); // Flag to show loading state
-  const [isProcessing, setIsProcessing] = useState(false); // Flag for processing state
+interface EditorProps {
+  defaultValue?: string;
+  language?: string;
+}
 
-  // Function to handle Monaco Editor change
-  const handleEditorChange = (value: string) => {
-    setCode(value);
-  };
+interface ExecutionResult {
+  status: string;
+  executionTime: string;
+  memoryUsage: string;
+  output: string | null;
+  error: string | null;
+}
 
-  // Function to execute code via Judge0
+const CodeEditor: React.FC<EditorProps> = ({
+  defaultValue = '# Write your Python code here\n',
+  language = 'python',
+}) => {
+  const [code, setCode] = useState<string>(defaultValue);
+  const [result, setResult] = useState<ExecutionResult | null>(null);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const executeCode = async () => {
     setIsExecuting(true);
     setIsProcessing(true);
@@ -48,20 +61,74 @@ const EditorComponent = () => {
   };
 
   return (
-    <div>
-      <h1>Monaco Editor with Judge0 Integration</h1>
-      <Editor
-        height="70vh"
-        defaultLanguage="javascript"
-        defaultValue="// Write your code here"
-        onChange={(value) => handleEditorChange(value!)} // Update on change
-      />
-      <button onClick={executeCode} disabled={isExecuting}>
-        {isExecuting ? 'Executing...' : 'Run Code'}
-      </button>
-      {isProcessing && <p>Processing...</p>}
-      <pre>{output}</pre> {/* Display output here */}
+    <div className="w-full max-w-3xl">
+      <div className="flex space-x-4 mx-8">
+        <Card className="w-full max-w-3xl mx-auto">
+          <CardContent className="p-4">
+            <Editor
+              height="50vh"
+              defaultLanguage={language}
+              defaultValue={defaultValue}
+              onChange={(value) => setCode(value || '')}
+              theme={'vs-dark'}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                lineNumbers: 'on',
+                roundedSelection: false,
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+              }}
+            />
+            <div className="mt-4 space-y-4">
+              <Button
+                onClick={executeCode}
+                disabled={isExecuting}
+                className="w-full"
+              >
+                {isExecuting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Running...
+                  </>
+                ) : (
+                  'Run Code'
+                )}
+              </Button>
+
+              {error && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+                  <pre className="text-red-600 whitespace-pre-wrap">{error}</pre>
+                </div>
+              )}
+
+              {result && !error && (
+                <div className="p-4 border rounded-md dark">
+                  <pre className="whitespace-pre-wrap">
+                    <strong>Status:</strong> {result.status}
+                    <br />
+                    <strong>Execution Time:</strong> {result.executionTime}
+                    <br />
+                    <strong>Memory Usage:</strong> {result.memoryUsage}
+                    <br />
+                    <strong>Output:</strong> <br />
+                    {result.output || 'No output'}
+                    {result.error && (
+                      <>
+                        <br />
+                        <strong>Error:</strong> {result.error}
+                      </>
+                    )}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
+
+
   );
 };
 
