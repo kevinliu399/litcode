@@ -3,7 +3,7 @@ import Editor from '@monaco-editor/react';
 import axios from 'axios';
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Check } from 'lucide-react';
 
 interface EditorProps {
   defaultValue?: string;
@@ -78,95 +78,73 @@ const CodeEditor: React.FC<EditorProps> = ({
   };
 
   return (
-    <div className="flex space-x-4 mx-8">
-      <Card className="w-full max-w-3xl mx-auto">
-        <CardContent className="p-4">
-          <Editor
-            height="50vh"
-            defaultLanguage={language}
-            defaultValue={defaultValue}
-            onChange={(value) => setCode(value || '')}
-            options={{
-              minimap: { enabled: false },
-              fontSize: 14,
-              lineNumbers: 'on',
-              roundedSelection: false,
-              scrollBeyondLastLine: false,
-              automaticLayout: true,
-            }}
-          />
-          <div className="mt-4 space-y-4">
-            <Button
-              onClick={executeCode}
-              disabled={isExecuting}
-              className="w-full"
-            >
-              {isExecuting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Running...
-                </>
-              ) : (
-                'Run Code'
+    <div className="w-full max-w-3xl">
+      <div className="flex space-x-4 mx-8">
+        <Card className="w-full max-w-3xl mx-auto">
+          <CardContent className="p-4">
+            <Editor
+              height="50vh"
+              defaultLanguage={language}
+              defaultValue={defaultValue}
+              onChange={(value) => setCode(value || '')}
+              theme={'vs-dark'}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                lineNumbers: 'on',
+                roundedSelection: false,
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+              }}
+            />
+            <div className="mt-4 space-y-4">
+              <Button
+                onClick={executeCode}
+                disabled={isExecuting}
+                className="w-full"
+              >
+                {isExecuting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Running...
+                  </>
+                ) : (
+                  'Run Code'
+                )}
+              </Button>
+
+              {error && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+                  <pre className="text-red-600 whitespace-pre-wrap">{error}</pre>
+                </div>
               )}
-            </Button>
 
-            {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-                <pre className="text-red-600 whitespace-pre-wrap">{error}</pre>
-              </div>
-            )}
-
-            {result && !error && (
-              <div className="p-4 border rounded-md dark">
-                <pre className="whitespace-pre-wrap">
-                  <strong>Status:</strong> {result.status}
-                  <br />
-                  <strong>Execution Time:</strong> {result.executionTime}
-                  <br />
-                  <strong>Memory Usage:</strong> {result.memoryUsage}
-                  <br />
-                  <strong>Output:</strong> <br />
-                  {result.output || 'No output'}
-                  {result.error && (
-                    <>
-                      <br />
-                      <strong>Error:</strong> {result.error}
-                    </>
-                  )}
-                </pre>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-      <div className='flex flex-col space-y-4'>
-        <Card className="h-60 p-4">
-          <CardTitle>
-            <h1 className="py-2">Problem Description</h1>
-          </CardTitle>
-          <CardDescription className="space-y-4">
-            <p>
-              Write a program that takes a string as input and returns the number of vowels in the string.
-            </p>
-            <ul>
-              <li>Input: "hello"</li>
-              <li>Output: 2</li>
-            </ul>
-            <ul>
-              <li>Input: "world"</li>
-              <li>Output: 1</li>
-            </ul>
-          </CardDescription>
-        </Card>
-
-        <Card>
-          <CardContent className="py-2 h-20">
-            <h2>Opponent: <p className='underline font-semibold'>orlolol</p></h2>
+              {result && !error && (
+                <div className="p-4 border rounded-md dark">
+                  <pre className="whitespace-pre-wrap">
+                    <strong>Status:</strong> {result.status}
+                    <br />
+                    <strong>Execution Time:</strong> {result.executionTime}
+                    <br />
+                    <strong>Memory Usage:</strong> {result.memoryUsage}
+                    <br />
+                    <strong>Output:</strong> <br />
+                    {result.output || 'No output'}
+                    {result.error && (
+                      <>
+                        <br />
+                        <strong>Error:</strong> {result.error}
+                      </>
+                    )}
+                  </pre>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
     </div>
+
 
   );
 };
