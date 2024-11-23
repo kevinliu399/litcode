@@ -1,4 +1,5 @@
 'use client';
+
 import NavBar from "../components/navbar";
 import {
     Select,
@@ -6,7 +7,7 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import {
     Drawer,
     DrawerClose,
@@ -16,16 +17,13 @@ import {
     DrawerHeader,
     DrawerTitle,
     DrawerTrigger,
-} from "@/components/ui/drawer"
+} from "@/components/ui/drawer";
 import {
     Button
-} from "@/components/ui/button"
-
-import EditorComponent from '../components/EditorComponent';
-
+} from "@/components/ui/button";
+import BFSVisualizer from '../components/Visualizer'; 
 
 export default function GraphPage() {
-
     return (
         <div>
             <NavBar />
@@ -47,9 +45,9 @@ export default function GraphPage() {
 
                     <Drawer>
                         <DrawerTrigger>
-                        <div className="text-sm border-2 border-gray-400 rounded-md px-2 py-2 mt-4 hover:text-lime-400 hover:border-lime-400 transition-all">
-                            Find an opponent    
-                        </div>
+                            <div className="text-sm border-2 border-gray-400 rounded-md px-2 py-2 mt-4 hover:text-lime-400 hover:border-lime-400 transition-all">
+                                Find an opponent
+                            </div>
                         </DrawerTrigger>
                         <DrawerContent>
                             <DrawerHeader>
@@ -57,20 +55,26 @@ export default function GraphPage() {
                                 <DrawerDescription>Practice your knowledge in graphs!</DrawerDescription>
                             </DrawerHeader>
                             <DrawerFooter>
-                                <Button size="lg" >Challenge</Button>
+                                <Button size="lg">Challenge</Button>
                                 <DrawerClose>
-                                    <Button variant="outline" size="lg" >Cancel</Button>
+                                    <Button variant="outline" size="lg">Cancel</Button>
                                 </DrawerClose>
                             </DrawerFooter>
                         </DrawerContent>
                     </Drawer>
-
-
                 </div>
 
+                <div className="mt-8 flex justify-center">
+                    <BFSVisualizer  // Change Grid settings here
+                        width={10}
+                        height={8}
+                        cellSize={50}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 7, y: 6 }}
+                        displaySpeed={100} // Pause duration in ms
+                    />
+                </div>
             </div>
-            <h1>Graph Page</h1>
-            <EditorComponent/>
         </div>
-    )
+    );
 }
