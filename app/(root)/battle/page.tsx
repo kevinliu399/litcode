@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 
 const Battle = () => {
   return (
-    <div className='relative overflow-hidden h-screen '>
+    <div className='relative h-screen '>
       {/* Background Effects */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]" />

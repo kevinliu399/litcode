@@ -37,14 +37,14 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black/95 min-h-screen vsc-initialized`}
         >
-          <div className="absolute top-4 right-4 z-50">
+          {/* <div className="absolute top-4 right-4 z-50">
             <SignedOut>
               <SignInButton />
             </SignedOut>
             <SignedIn>
               <UserButton />
             </SignedIn>
-          </div>
+          </div> */}
           {children}
         </body>
       </html>

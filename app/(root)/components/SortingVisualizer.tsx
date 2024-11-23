@@ -99,7 +99,7 @@ async function sort(arr) {
             }
 
             // Mark all indices as sorted
-            setSortedIndices(new Set(result.map((_, i) => i)));
+            setSortedIndices(new Set(result.map((_: any, i: number) => i)));
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
             console.error(err);
