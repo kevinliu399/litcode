@@ -21,9 +21,11 @@
     "framer-motion": "^11.11.17",
     "lucide-react": "^0.460.0",
     "mongodb": "^6.11.0",
+    "mongoose": "^8.8.2",
     "next": "15.0.3",
     "react": "19.0.0-rc-66855b96-20241106",
     "react-dom": "19.0.0-rc-66855b96-20241106",
+    "svix": "^1.41.0",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.1"

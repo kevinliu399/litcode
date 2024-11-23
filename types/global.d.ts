@@ -1,8 +1,16 @@
-import { MongoClient } from "mongodb";
+/* eslint-disable no-unused-vars */
 
-declare global {
-  // Extend globalThis instead of NodeJS.Global
-  var _mongoClientPromise: Promise<MongoClient> | undefined;
-}
+// ====== USER PARAMS
+declare type CreateUserParams = {
+  clerkId: string;
+  firstName: string | null;
+  lastName: string | null;
+  photo: string;
+  email: string;
+};
 
-export {};
+declare type UpdateUserParams = {
+  firstName: string | null;
+  lastName: string | null;
+  photo: string;
+};

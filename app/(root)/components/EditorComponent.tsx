@@ -29,51 +29,34 @@ const CodeEditor: React.FC<EditorProps> = ({
 
   const executeCode = async () => {
     setIsExecuting(true);
-    setError(null);
-    setResult(null);
-
+    setIsProcessing(true);
     try {
-      // Submit code
-      const submitResponse = await axios.post('/api/judge_submit', {
-        source_code: code,
-        language_id: 100, // Python
-        stdin: '',
+      // Submit code to the Judge0 API route
+      const response = await axios.post('/api/judge0', {
+        code,
+        language_id: 4, // Example: 4 for C
+        stdin: '', // Optional, provide input if needed
       });
+      console.log(response.data)
+      const { token } = response.data;
 
-      const { token } = submitResponse.data;
-
-      // Poll for results
-      const pollInterval = 1000; // 1 second
-      const maxAttempts = 30; // Maximum 30 seconds of polling
-      let attempts = 0;
-
-      const pollResult = async () => {
-        attempts++;
-        const response = await axios.get(`/api/judge_submit?token=${token}`);
-        const { status, output, error, executionTime, memoryUsage } = response.data;
-
-        if (status === 'Processing' || status === 'In Queue') {
-          if (attempts >= maxAttempts) {
-            throw new Error('Execution timed out after 30 seconds');
-          }
-          // Continue polling
-          setTimeout(pollResult, pollInterval);
-        } else {
-          setIsExecuting(false);
-          setResult({
-            status,
-            executionTime,
-            memoryUsage,
-            output,
-            error
-          });
+      // Poll the status of the submission every 2 seconds
+      const checkStatus = setInterval(async () => {
+        const statusResponse = await axios.get(`/api/judge0-status?token=${token}`);
+        console.log(statusResponse.data)
+        if (statusResponse.data.status === 'Processing') {
+          // Continue polling until finished
+          return;
         }
-      };
-
-      await pollResult();
-    } catch (err: any) {
+        setIsProcessing(false);
+        setIsExecuting(false);
+        clearInterval(checkStatus);
+        setOutput(statusResponse.data.output || statusResponse.data.errors || 'No output');
+      }, 2000); // Poll every 2 seconds
+    } catch (error) {
+      console.error('Error executing code:', error);
       setIsExecuting(false);
-      setError(err.response?.data?.error || err.message);
+      setOutput('Error executing code');
     }
   };
 
@@ -149,4 +132,4 @@ const CodeEditor: React.FC<EditorProps> = ({
   );
 };
 
-export default CodeEditor;
+export default EditorComponent;
