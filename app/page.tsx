@@ -1,7 +1,8 @@
 'use client';
 import Image from "next/image";
-import { Button } from "./components/button";
+import { MyButton } from "./components/MyButton";
 import { useRouter } from "next/navigation";
+
 
 export default function Home() {
   const router = useRouter();
@@ -20,9 +21,9 @@ export default function Home() {
 
   return (
     <div>
-      <nav>
+      <nav className="absolute right-0 p-2">
         <div>
-          <button>login</button>
+          <button className="text-sm underline hover:text-lime-400 transition-all">login</button>
         </div>
       </nav>
       <div className="h-screen w-screen flex items-center justify-center cursor-default">
@@ -48,9 +49,9 @@ export default function Home() {
             </div>
             <div className="flex flex-row items-center justify-center space-x-6">
               <div className="flex flex-row justify-center space-x-6">
-                <Button text={"graph"} onClick={graphNav} />
-                <Button text={"tree"} onClick={treeNav} />
-                <Button text={"array"} onClick={arrNav} />
+                <MyButton text={"graph"} onClick={graphNav} />
+                <MyButton text={"tree"} onClick={treeNav} />
+                <MyButton text={"array"} onClick={arrNav} />
               </div>
             </div>
           </div>
