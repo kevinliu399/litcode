@@ -59,13 +59,13 @@ const SortingVisualizer: React.FC = () => {
                 {numbers.map((num, index) => (
                     <div
                         key={index}
-                        className="w-12 h-12 flex items-center justify-center text-white text-xl rounded-full"
+                        className="w-12 h-12 flex items-center justify-center text-black text-xl rounded-full"
                         style={{
                             backgroundColor: sortedIndices.has(index)
-                                ? '#4CAF50' // Green for sorted
+                                ? '#32CD32' // Sorted
                                 : currentSwap?.includes(index)
-                                ? '#FF5722' // Orange for current swap
-                                : '#2196F3', // Blue for unsorted
+                                ? '#CBC3E3' // Swap
+                                : '#FFFFFF', // Unsorted
                             transition: 'all 0.5s ease',
                         }}
                     >
