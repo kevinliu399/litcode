@@ -1,9 +1,34 @@
 import React, { useState } from 'react';
-import Editor from '@monaco-editor/react';
+import Editor, { OnMount } from '@monaco-editor/react';
 import axios from 'axios';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Terminal, Clock, CircuitBoard, AlertCircle } from 'lucide-react';
+const customTheme = {
+  base: 'vs-dark',
+  inherit: false,
+  rules: [
+    { token: '', foreground: 'FFFFFF', background: '1A1A1A' }, // Base: white text on dark background
+    { token: 'comment', foreground: 'A0A0A0' }, // Subtle gray for comments
+    { token: 'keyword', foreground: '90EE90' }, // Light green for keywords
+    { token: 'string', foreground: 'D4BFFF' }, // Keep light purple for strings only
+    { token: 'variable', foreground: '98FB98' }, // Pale green for variables
+    { token: 'number', foreground: '7FFF00' }, // Lime green for numbers
+    { token: 'operator', foreground: 'FFFFFF' }, // White for operators
+    { token: 'type', foreground: '90EE90' }, // Light green for types
+    { token: 'function', foreground: 'BDFCC9' }, // Slightly different green for functions
+  ],
+  colors: {
+    'editor.background': '#1A1A1A', // Dark background
+    'editor.foreground': '#FFFFFF', // White text
+    'editorLineNumber.foreground': '#98FB98', // Light green for line numbers
+    'editorCursor.foreground': '#7FFF00', // Bright lime green cursor
+    'editor.selectionBackground': '#2D4F2D', // Darker green for selection
+    'editor.inactiveSelectionBackground': '#2A2A2A', // Darker gray for inactive selections
+    'editorIndentGuide.background': '#333333', // Subtle dark gray for guides
+    'editorIndentGuide.activeBackground': '#7FFF00' // Lime green for active guides
+  }
+};
 
 interface EditorProps {
   defaultValue?: string;
@@ -18,7 +43,7 @@ interface ExecutionResult {
   error: string | null;
 }
 
-const CodeEditor: React.FC<EditorProps> = ({
+const EditorComponent: React.FC<EditorProps> = ({
   defaultValue = '# Write your Python code here\n',
   language = 'python',
 }) => {
@@ -26,6 +51,11 @@ const CodeEditor: React.FC<EditorProps> = ({
   const [result, setResult] = useState<ExecutionResult | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleEditorMount: OnMount = (editor, monaco) => {
+    monaco.editor.defineTheme('custom-theme', customTheme);
+    monaco.editor.setTheme('custom-theme');
+  };
 
   const executeCode = async () => {
     setIsExecuting(true);
@@ -92,16 +122,14 @@ const CodeEditor: React.FC<EditorProps> = ({
               defaultLanguage={language}
               defaultValue={defaultValue}
               onChange={(value) => setCode(value || '')}
-              theme="vs-dark"
+              onMount={handleEditorMount}
               options={{
-                minimap: { enabled: false },
                 fontSize: 14,
-                lineNumbers: 'on',
-                roundedSelection: false,
+                minimap: { enabled: false },
                 scrollBeyondLastLine: false,
                 automaticLayout: true,
                 padding: { top: 16, bottom: 16 },
-                fontFamily: 'JetBrains Mono, monospace'
+                fontFamily: 'JetBrains Mono, monospace',
               }}
             />
           </div>
@@ -179,4 +207,4 @@ const CodeEditor: React.FC<EditorProps> = ({
   );
 };
 
-export default CodeEditor;
+export default EditorComponent;

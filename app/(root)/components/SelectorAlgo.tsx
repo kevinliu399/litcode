@@ -10,7 +10,7 @@ const AlgorithmSelector = () => {
                 <div className="flex items-center space-x-2 mb-6">
                     <Binary size={20} className="text-lime-400" />
                     <CardTitle className="text-xl text-white/90">
-                        Pick an algorithm to practice
+                        I want to practice
                     </CardTitle>
                 </div>
 
@@ -20,7 +20,7 @@ const AlgorithmSelector = () => {
                         <SelectTrigger className="w-[300px] bg-white/5 border-white/10 text-white/80 hover:bg-white/10 transition-colors">
                             <div className="flex items-center space-x-2">
                                 <Code size={16} className="text-lime-400" />
-                                <SelectValue placeholder="Choose algorithm type" />
+                                <SelectValue placeholder="Choose an algorighm" />
                             </div>
                         </SelectTrigger>
                         <SelectContent className=" text-white/80">

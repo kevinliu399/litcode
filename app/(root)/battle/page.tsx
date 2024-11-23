@@ -15,7 +15,7 @@ const Battle = () => {
         <div className="absolute left-1/4 top-1/3 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[300px] bg-purple-500/5 rounded-full blur-3xl" />
       </div>
 
-      {/* Header Section */}
+      
       <div className="flex flex-row justify-between items-center px-8 py-6 border-b border-white/10">
         <div className="flex items-center space-x-4">
           <div className="flex items-center bg-white/5 px-4 py-2 rounded-lg hover:bg-white/10 transition-colors">
@@ -28,7 +28,7 @@ const Battle = () => {
         </div>
 
         {/* Timer Component */}
-        <div className="relative flex items-center bg-white/5 px-6 py-2 rounded-lg border border-white/10">
+        <div className="relative flex items-center bg-white/5 px-6 py-2 rounded-lg border border-white/10 cursor-default">
           <div className="flex items-center space-x-2 text-white/80">
             <span className="font-medium">Timer</span>
             <Hourglass size={16} className="text-lime-400" />
