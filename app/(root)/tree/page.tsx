@@ -20,6 +20,7 @@ import {
 import {
     Button
 } from "@/components/ui/button"
+import EditorComponent from '../components/EditorComponent';
 
 export default function TreePage() {
 

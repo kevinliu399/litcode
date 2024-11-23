@@ -21,6 +21,8 @@ import {
     Button
 } from "@/components/ui/button"
 
+import EditorComponent from '../components/EditorComponent';
+
 
 export default function GraphPage() {
 
@@ -67,6 +69,8 @@ export default function GraphPage() {
                 </div>
 
             </div>
+            <h1>Graph Page</h1>
+            <EditorComponent/>
         </div>
     )
 }
