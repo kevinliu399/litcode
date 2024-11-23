@@ -1,5 +1,3 @@
-// pages/api/judge0-status.ts
-
 import axios from 'axios';
 import * as dotenv from 'dotenv'
 dotenv.config()
@@ -26,7 +24,7 @@ export default async function handler(req: any, res: any) {
 
       const submission = response.data;
       // Wait for the submission to complete
-      if (submission.status.id === 3) { // 3 means "Accepted"
+      if (submission.status.id === 3) { 
         return res.status(200).json({
           output: submission.stdout,
           errors: submission.stderr,

@@ -9,11 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-<<<<<<< HEAD
     "@monaco-editor/react": "^4.6.0",
-=======
     "@clerk/nextjs": "^6.5.0",
->>>>>>> faa5aa748c03183d5936b7e2d048645d62e07cc1
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-select": "^2.1.2",
     "@radix-ui/react-slot": "^1.1.0",
