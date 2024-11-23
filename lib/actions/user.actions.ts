@@ -8,8 +8,10 @@ import User from "../dabatase/models/user";
 export async function createUser(user: CreateUserParams) {
   try {
     await connectToDatabase();
+    console.log("creating a user:", user)
 
     const newUser = await User.create(user);
+    newUser.elo = 1000;
 
     return JSON.parse(JSON.stringify(newUser));
   } catch (error) {

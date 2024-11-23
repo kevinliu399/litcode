@@ -21,6 +21,10 @@ const UserSchema = new Schema({
   lastName: {
     type: String,
   },
+  elo: {
+    type: Number,
+    default: 1000,
+  },
 });
 
 const User = models?.User || model("User", UserSchema);
