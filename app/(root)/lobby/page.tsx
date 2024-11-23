@@ -10,9 +10,23 @@ import {
 } from "@/components/ui/select"
 import Image from "next/image";
 import { Globe, ChevronRight } from "lucide-react";
+import { useRouter } from 'next/router';
 
 export default function TreePage() {
+    const [algorithm, setAlgorithm] = useState<string>("");
+    const [isQueuing, setIsQueuing] = useState(false);
+    const router = useRouter();
 
+    const startBattle = () => {
+        if (!algorithm) {
+            alert("Please select an algorithm type first!");
+            return;
+        }
+        
+        setIsQueuing(true);
+        // Store algorithm preference in localStorage for the battle page
+        localStorage.setItem('selectedAlgorithm', algorithm);
+        router.push('/battle');
 
     return (
         <div className="min-h-screen bg-gradient-to-br">
@@ -52,9 +66,13 @@ export default function TreePage() {
                             <h2 className="text-2xl font-bold bg-gradient-to-r from-lime-600 to-purple-300 bg-clip-text text-transparent">
                                 Queue up and prepare for battle!
                             </h2>
-                            <button className="flex flex-row animate-pulse rounded-md hover:underline transition-colors duration-2500">
-                                <div className="text-md text-gray-500 font-normal">
-                                    Start Battle
+                            <button 
+                                onClick={startBattle}
+                                disabled={isQueuing}
+                                className="flex flex-row items-center rounded-md hover:underline transition-colors duration-2500"
+                            >
+                                <div className={`text-md ${isQueuing ? 'text-gray-400' : 'text-gray-500'} font-normal`}>
+                                    {isQueuing ? 'Queuing...' : 'Start Battle'}
                                 </div>
                                 <ChevronRight size={24} className="text-lime-600" />
                             </button>
@@ -78,4 +96,5 @@ export default function TreePage() {
             </div>
         </div>
     );
+    }
 }
