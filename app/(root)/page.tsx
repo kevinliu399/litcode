@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 
 export default function Home() {
   const router = useRouter();
-  let nav = () => {
-    router.push("/lobby");
+  const nav = (type:string) => {
+    router.push(`/lobby?type=${type}`);
   }
-
+2
   return (
     <main className="relative overflow-hidden h-screen">
       {/* Grid pattern with glow */}
@@ -45,9 +45,9 @@ export default function Home() {
             </div>
             <div className="flex flex-row items-center justify-center space-x-6">
               <div className="flex flex-row justify-center space-x-6">
-                <MyButton text="graph" onClick={nav} />
-                <MyButton text="tree" onClick={nav} />
-                <MyButton text="array" onClick={nav} />
+                <MyButton text="graph" onClick={() => nav('graph')} />
+                <MyButton text="tree" onClick={() => nav('tree')} />
+                <MyButton text="array" onClick={() => nav('array')} />
               </div>
             </div>
           </div>

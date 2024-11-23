@@ -4,9 +4,8 @@ export interface Question {
     description: string; 
     testCases: Array<{
         testId: string; 
-        output: string; 
-        hidden?: boolean; 
+        input: string;
+        output: string;  
     }>; 
-    elo: number;
     type: "graph" | "tree" | "array" | "";
 }
