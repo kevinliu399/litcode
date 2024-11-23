@@ -1,54 +1,34 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-
-import User from "../dabatase/models/user";
 import { connectToDatabase } from "../dabatase/mongoose";
+import User from "../dabatase/models/user";
 
 // CREATE
 export async function createUser(user: CreateUserParams) {
-  console.log("Creating user", user);
   try {
     await connectToDatabase();
-    let existingUser = await User.findOne({ clerkId: user.clerkId });
 
-    if (existingUser) {
-      console.log("User with this clerkId already exists:", existingUser);
-      existingUser = Object.assign(existingUser, user);
-    } else {
-      existingUser = new User({
-        ...user,
-        isSubscribed: false,
-        subscriptionEndDate: null,
-      });
-    }
-    const newUser = await existingUser.save();
-    console.log("User created or updated in DB", newUser);
+    const newUser = await User.create(user);
 
     return JSON.parse(JSON.stringify(newUser));
   } catch (error) {
-    console.error("Error creating user:", error);
+    console.log(error)
   }
 }
 
-
-
 // READ
 export async function getUserById(userId: string) {
-  console.log("Fetching user in getUserById", userId);
   try {
     await connectToDatabase();
 
     const user = await User.findOne({ clerkId: userId });
 
-    if (!user) {
-      console.log("User not found for clerkId:", userId);
-      return null;
-    }
+    if (!user) throw new Error("User not found");
 
     return JSON.parse(JSON.stringify(user));
   } catch (error) {
-
+    console.log(error);
   }
 }
 
@@ -62,16 +42,15 @@ export async function updateUser(clerkId: string, user: UpdateUserParams) {
     });
 
     if (!updatedUser) throw new Error("User update failed");
-
+    
     return JSON.parse(JSON.stringify(updatedUser));
   } catch (error) {
-
+    console.log(error);
   }
 }
 
 // DELETE
 export async function deleteUser(clerkId: string) {
-  console.log("Deleting user", clerkId);
   try {
     await connectToDatabase();
 
@@ -88,5 +67,6 @@ export async function deleteUser(clerkId: string) {
 
     return deletedUser ? JSON.parse(JSON.stringify(deletedUser)) : null;
   } catch (error) {
+    console.log(error);
   }
 }
