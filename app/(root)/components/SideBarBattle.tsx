@@ -109,7 +109,6 @@ function SidebarBattle() {
       </Card>
 
       {/* Popout with BFSVisualizer */}
-      {/* Popout with BFSVisualizer */}
       {isPopoutOpen && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-[#1a1a1a] border border-[#333] rounded-lg shadow-lg w-3/4 h-3/4 p-6 relative">
@@ -126,7 +125,15 @@ function SidebarBattle() {
               <h2 className="text-2xl font-semibold text-lime-400 mb-4">
                 Sorting Visualizer
               </h2>
-              <SortingVisualizer algorithm="bubble" />
+              {/* <SortingVisualizer algorithm="bubble" /> */}
+              <BFSVisualizer
+                width={10}               // Number of cells horizontally
+                height={10}              // Number of cells vertically
+                cellSize={30}            // Size of each cell in pixels
+                start={{ x: 0, y: 0 }}   // Starting position
+                end={{ x: 6, y: 6 }}   // Ending position
+                timeComplexity="O(n²)"   // Complexity label to display
+            />
             </div>
           </div>
         </div>
