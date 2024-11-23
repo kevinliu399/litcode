@@ -35,7 +35,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en" className="dark">
         <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black/95 min-h-screen`}
+          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black/95 min-h-screen vsc-initialized`}
         >
           <div className="absolute top-4 right-4 z-50">
             <SignedOut>
