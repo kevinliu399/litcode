@@ -13,6 +13,7 @@ interface VisualizerProps {
     end: Position;
 }
 
+
 const BFSVisualizer: React.FC<VisualizerProps> = ({
     width,
     height,
@@ -23,6 +24,7 @@ const BFSVisualizer: React.FC<VisualizerProps> = ({
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationFrameRef = useRef<number>();
     const isRunningRef = useRef(false);
+    const [restart, setRestart] = useState(false);
     
     const [grid, setGrid] = useState<CellType[][]>(() => 
         Array.from({ length: height }, () => Array(width).fill('.'))
@@ -98,7 +100,7 @@ const BFSVisualizer: React.FC<VisualizerProps> = ({
     useEffect(() => {
         const ctx = canvasRef.current?.getContext('2d');
         if (!ctx) return;
-
+    
         const runBFS = async () => {
             isRunningRef.current = true;
             const localGrid = Array.from({ length: height }, () => 
@@ -114,36 +116,36 @@ const BFSVisualizer: React.FC<VisualizerProps> = ({
             
             const displaySpeed = 100;
             let foundPath = false;
-
+    
             while (queue.length > 0 && isRunningRef.current) {
                 const current = queue.shift()!;
                 const currentKey = `${current.x},${current.y}`;
-
+    
                 if (current.x === end.x && current.y === end.y) {
                     foundPath = true;
                     break;
                 }
-
+    
                 if (localGrid[current.y][current.x] !== 'S') {
                     localGrid[current.y][current.x] = '#';
                 }
-
+    
                 drawGrid(ctx, localGrid);
                 await new Promise(resolve => setTimeout(resolve, displaySpeed));
-
+    
                 const directions = [
                     { x: -1, y: 0 }, { x: 1, y: 0 },
                     { x: 0, y: -1 }, { x: 0, y: 1 }
                 ];
-
+    
                 for (const dir of directions) {
                     const neighbor: Position = {
                         x: current.x + dir.x,
                         y: current.y + dir.y
                     };
-
+    
                     const neighborKey = `${neighbor.x},${neighbor.y}`;
-
+    
                     if (
                         neighbor.x >= 0 && neighbor.x < width &&
                         neighbor.y >= 0 && neighbor.y < height &&
@@ -161,37 +163,46 @@ const BFSVisualizer: React.FC<VisualizerProps> = ({
                     }
                 }
             }
-
+    
             if (foundPath) {
                 const finalGrid = reconstructPath(cameFrom, end, localGrid);
                 drawGrid(ctx, finalGrid);
             }
         };
-
+    
         // Reset and start
         isRunningRef.current = false;
         if (animationFrameRef.current) {
             cancelAnimationFrame(animationFrameRef.current);
         }
         setTimeout(() => runBFS(), 100);
-
+    
         return () => {
             isRunningRef.current = false;
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
             }
         };
-    }, [start, end, width, height, cellSize]);
-
+    }, [start, end, width, height, cellSize, restart]); 
+    
     return (
-        <div className="relative">
-            <canvas 
-                ref={canvasRef} 
-                width={width * cellSize} 
-                height={height * cellSize} 
-                className="rounded-lg"
-            />
-        </div>
+        <div className="relative flex flex-col items-center">
+        {/* Canvas for Visualization */}
+        <canvas 
+            ref={canvasRef} 
+            width={width * cellSize} 
+            height={height * cellSize} 
+            className="rounded-lg mb-8"
+        />
+
+        {/* Restart Button */}
+        <button
+            onClick={() => setRestart((prev) => !prev)} // Toggle restart state
+            className="mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+            Restart
+        </button>
+    </div>
     );
 };
 
