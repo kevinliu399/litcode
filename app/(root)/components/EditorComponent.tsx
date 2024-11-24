@@ -3,7 +3,7 @@ import Editor, { OnMount } from '@monaco-editor/react';
 import axios from 'axios';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Terminal, Clock, CircuitBoard, AlertCircle, Check } from 'lucide-react';
+import { Loader2, Terminal, Clock, CircuitBoard, AlertCircle, Check, ArrowBigRight } from 'lucide-react';
 import { Socket, io } from 'socket.io-client';
 import useGameStore from '../stores/gamestore';
 import { useUser } from '@clerk/nextjs';
@@ -202,7 +202,7 @@ const EditorComponent: React.FC<EditorProps> = ({
           {/* Monaco Editor */}
           <div className="border border-white/10 rounded-lg overflow-hidden">
             <Editor
-              height="60vh"
+              height="55vh"
               defaultLanguage={language}
               defaultValue={defaultValue}
               onChange={(value) => setCode(value || '')}
@@ -239,7 +239,7 @@ const EditorComponent: React.FC<EditorProps> = ({
             {testResults && (
               <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
                 <div className="flex items-center space-x-2">
-                  <Check size={18} className="text-lime-400" />
+                  <ArrowBigRight size={18} className="text-lime-400 mt-1" />
                   <span className="text-white/80 font-medium">
                     Test Results: {testResults.passed}/{testResults.total} Passed
                   </span>
