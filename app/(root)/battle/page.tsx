@@ -28,7 +28,7 @@ const Battle = () => {
 
         // Timer countdown
         const interval = setInterval(() => {
-            updateTimer((prev: number) => Math.max(0, prev - 1));
+            updateTimer((prev: Number) => Math.max(0, prev - 1));
         }, 1000);
 
         return () => clearInterval(interval);
