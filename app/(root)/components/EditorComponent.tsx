@@ -190,38 +190,6 @@ const EditorComponent: React.FC<EditorProps> = ({
     <div className="w-full max-w-4xl px-6">
       <Card className="border border-white/10 bg-white/5 backdrop-blur-sm">
         <CardContent className="p-6">
-          {/* Progress Bar Section */}
-          <div className="mb-6 space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-white/80">Your Progress</span>
-              <span className="text-lime-400">
-                {myProgress.tests_passed}/{myProgress.total_tests} Tests Passed
-              </span>
-            </div>
-            <div className="w-full bg-white/10 rounded-full h-2">
-              <div
-                className="bg-lime-400 h-2 rounded-full transition-all duration-300"
-                style={{
-                  width: `${(myProgress.tests_passed / myProgress.total_tests) * 100}%`
-                }}
-              />
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <span className="text-white/80">Opponent's Progress</span>
-              <span className="text-purple-400">
-                {opponentProgress.tests_passed}/{opponentProgress.total_tests} Tests Passed
-              </span>
-            </div>
-            <div className="w-full bg-white/10 rounded-full h-2">
-              <div
-                className="bg-purple-400 h-2 rounded-full transition-all duration-300"
-                style={{
-                  width: `${(opponentProgress.tests_passed / opponentProgress.total_tests) * 100}%`
-                }}
-              />
-            </div>
-          </div>
 
           {/* Editor Header */}
           <div className="flex items-center justify-between mb-4">
@@ -270,34 +238,11 @@ const EditorComponent: React.FC<EditorProps> = ({
             {/* Test Results Section */}
             {testResults && (
               <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
-                <div className="flex items-center space-x-2 mb-4">
+                <div className="flex items-center space-x-2">
                   <Check size={18} className="text-lime-400" />
                   <span className="text-white/80 font-medium">
                     Test Results: {testResults.passed}/{testResults.total} Passed
                   </span>
-                </div>
-                <div className="space-y-2">
-                  {testResults.test_results.map((test, index) => (
-                    <div
-                      key={index}
-                      className={`p-3 rounded-md ${
-                        test.passed
-                          ? 'bg-lime-400/10 border-lime-400/20'
-                          : 'bg-red-500/10 border-red-500/20'
-                      } border`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className={`text-sm ${
-                          test.passed ? 'text-lime-400' : 'text-red-400'
-                        }`}>
-                          Test Case {index + 1}
-                        </span>
-                        {test.error && (
-                          <span className="text-red-400 text-sm">{test.error}</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
                 </div>
               </div>
             )}
@@ -310,49 +255,6 @@ const EditorComponent: React.FC<EditorProps> = ({
                   <span className="text-red-400 font-medium">Error</span>
                 </div>
                 <pre className="text-red-400/90 text-sm font-mono whitespace-pre-wrap">{error}</pre>
-              </div>
-            )}
-
-            {/* Judge0 Results */}
-            {result && !error && (
-              <div className="space-y-4 p-4 border border-white/10 rounded-lg bg-white/5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <Clock size={16} className="text-lime-400" />
-                      <span className="text-white/60 text-sm">{result.executionTime}</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <CircuitBoard size={16} className="text-lime-400" />
-                      <span className="text-white/60 text-sm">{result.memoryUsage}</span>
-                    </div>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    result.status === 'Completed' ? 'bg-lime-400/20 text-lime-400' : 'bg-purple-400/20 text-purple-400'
-                  }`}>
-                    {result.status}
-                  </span>
-                </div>
-
-                <div className="space-y-2">
-                  {result.output && (
-                    <>
-                      <div className="text-white/80 font-medium text-sm">Output:</div>
-                      <pre className="p-4 bg-black/40 rounded-md text-white/90 text-sm font-mono whitespace-pre-wrap border border-white/5">
-                        {result.output}
-                      </pre>
-                    </>
-                  )}
-                  
-                  {result.error && (
-                    <>
-                      <div className="text-white/80 font-medium text-sm mt-4">Error:</div>
-                      <pre className="p-4 bg-red-500/10 rounded-md text-red-400/90 text-sm font-mono whitespace-pre-wrap border border-red-500/20">
-                        {result.error}
-                      </pre>
-                    </>
-                  )}
-                </div>
               </div>
             )}
           </div>
