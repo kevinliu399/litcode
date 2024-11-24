@@ -54,7 +54,7 @@ const useGameStore = create<GameState>((set, get) => ({
     initializeSocket: () => {
         if (get().socket?.connected) return;
 
-        const socket = io('http://localhost:5000');
+        const socket = io('https://28d6-142-157-239-111.ngrok-free.app/');
         
         socket.on('connect', () => {
             console.log('Connected to game server');
