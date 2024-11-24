@@ -9,6 +9,7 @@ from datetime import datetime
 from bson import ObjectId
 import os
 from dotenv import load_dotenv
+from typing import Dict, List
 
 # Load environment variables
 load_dotenv()
@@ -67,14 +68,44 @@ def home():
 
 class GameState:
     def __init__(self):
-        self.waiting_queue = []
+        # Separate queues for each algorithm type
+        self.waiting_queues = {
+            'graph': [],
+            'tree': [],
+            'array': [],
+            'random': []
+        }
         self.active_matches = {}
         self.match_timers = {}
+
+    def add_to_queue(self, player_data: dict, algorithm_type: str):
+        if algorithm_type in self.waiting_queues:
+            self.waiting_queues[algorithm_type].append(player_data)
+            return True
+        return False
+
+    def remove_from_queue(self, sid: str):
+        for queue in self.waiting_queues.values():
+            queue[:] = [p for p in queue if p['sid'] != sid]
+
+    def find_match(self, algorithm_type: str) -> tuple:
+        # For random type, check all queues
+        if algorithm_type == 'random':
+            for queue_type, queue in self.waiting_queues.items():
+                if len(queue) >= 2:
+                    return queue.pop(0), queue.pop(0), queue_type
+            return None, None, None
+
+        # For specific type, check only that queue
+        queue = self.waiting_queues[algorithm_type]
+        if len(queue) >= 2:
+            return queue.pop(0), queue.pop(0), algorithm_type
+        return None, None, None
 
 game_state = GameState()
 
 class Match:
-    def __init__(self, player1_id, player2_id, question: dict, duration=1800):
+    def __init__(self, player1_id, player2_id, question: dict, algorithm_type: str, duration=1800):
         self.match_id = str(ObjectId())
         self.player1 = {
             'id': player1_id,
@@ -89,6 +120,7 @@ class Match:
             'completed': False
         }
         self.question_id = question['_id']
+        self.algorithm_type = algorithm_type
         self.start_time = datetime.utcnow()
         self.duration = duration
         self.is_active = True
@@ -115,6 +147,7 @@ class Match:
             'player1': self.player1,
             'player2': self.player2,
             'question_id': self.question_id,
+            'algorithm_type': self.algorithm_type,
             'start_time': self.start_time,
             'duration': self.duration,
             'is_active': self.is_active
@@ -135,7 +168,7 @@ def start_match_timer(match_id, duration):
 def end_match(match):
     if not match.is_active:
         return
-    print(f"Match {match.match_id} ended!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
     match.is_active = False
     winner_id = match.get_winner()
     
@@ -152,8 +185,16 @@ def end_match(match):
     if match.match_id in game_state.active_matches:
         del game_state.active_matches[match.match_id]
 
-def get_random_question():
-    question = questions_collection.aggregate([{ '$sample': { 'size': 1 } }]).next()
+def get_random_question(algorithm_type: str):
+    query = {}
+    if algorithm_type != 'random':
+        query['type'] = algorithm_type
+    
+    question = questions_collection.aggregate([
+        {'$match': query},
+        {'$sample': {'size': 1}}
+    ]).next()
+    
     question['_id'] = str(question['_id'])
     return question
 
@@ -166,18 +207,17 @@ def default_error_handler(e):
 @socketio.on('connect')
 def handle_connect():
     print(f"Client connected: {request.sid}")
-    print(f"Transport: {request.args.get('transport', 'unknown')}")
-    print(f"Headers: {request.headers}")
     emit('connection_established', {'sid': request.sid})
-    
+
 @socketio.on('join_queue')
 def handle_join_queue(data):
     clerkId = data['clerkId']
     player_name = data['player_name']
+    algorithm_type = data.get('algorithm_type', 'random')
     
-    # Update user document without using clerkId
+    # Update user document
     users_collection.update_one(
-        {'clerkId': clerkId},  # Changed from _id to clerkId
+        {'clerkId': clerkId},
         {
             '$set': {
                 'clerkId': clerkId,
@@ -188,21 +228,23 @@ def handle_join_queue(data):
         upsert=True
     )
     
-    game_state.waiting_queue.append({
+    player_data = {
         'sid': request.sid,
         'clerkId': clerkId,
         'player_name': player_name
-    })
+    }
     
-    print(f"Player {player_name} ({clerkId}) joined queue. Queue size: {len(game_state.waiting_queue)}")
+    game_state.add_to_queue(player_data, algorithm_type)
+    print(f"Player {player_name} ({clerkId}) joined {algorithm_type} queue.")
     
-    if len(game_state.waiting_queue) >= 2:
-        player1 = game_state.waiting_queue.pop(0)
-        player2 = game_state.waiting_queue.pop(0)
+    # Try to find a match
+    player1, player2, matched_type = game_state.find_match(algorithm_type)
+    
+    if player1 and player2:
+        # Get a question of the matched type
+        question = get_random_question(matched_type)
         
-        question = get_random_question()
-        
-        match = Match(player1['clerkId'], player2['clerkId'], question)
+        match = Match(player1['clerkId'], player2['clerkId'], question, matched_type)
         game_state.active_matches[match.match_id] = match
         
         join_room(match.match_id, sid=player1['sid'])
@@ -225,7 +267,7 @@ def handle_join_queue(data):
         }
         emit('match_found', match_data, room=player2['sid'])
         
-        print(f"Match created between {player1['player_name']} and {player2['player_name']}")
+        print(f"Match created between {player1['player_name']} and {player2['player_name']} for {matched_type} algorithm")
         start_match_timer(match.match_id, match.duration)
 
 @socketio.on('submit_result')
@@ -248,7 +290,7 @@ def handle_submit_result(data):
 def handle_disconnect():
     print(f"Client disconnected: {request.sid}")
     try:
-        game_state.waiting_queue = [p for p in game_state.waiting_queue if p['sid'] != request.sid]
+        game_state.remove_from_queue(request.sid)
         
         for match_id, match in list(game_state.active_matches.items()):
             if match.player1['id'] == request.sid or match.player2['id'] == request.sid:
