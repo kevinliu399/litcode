@@ -54,7 +54,7 @@ const useGameStore = create<GameState>((set, get) => ({
     initializeSocket: () => {
         if (get().socket?.connected) return;
 
-        const socket = io('http://localhost:5000');
+        const socket = io('10.121.128.78:5000');
         
         socket.on('connect', () => {
             console.log('Connected to game server');

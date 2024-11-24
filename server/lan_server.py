@@ -24,6 +24,13 @@ questions_collection = db['questions']  # Collection for questions
 matches_collection = db['matches']
 users_collection = db['users']
 
+@app.route('/')
+def home():
+    return jsonify({
+        "status": "online",
+        "message": "LitCode server is running"
+    })
+
 class GameState:
     def __init__(self):
         self.waiting_queue = []
