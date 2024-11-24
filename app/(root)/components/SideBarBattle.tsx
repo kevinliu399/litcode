@@ -1,15 +1,14 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Check, FileText, Users, Code, CircleAlert } from 'lucide-react';
-import React from 'react';
-import BFSVisualizer from './GraphVisualizer';
-import useGameStore from '../stores/gamestore';
+import { Card, CardContent } from "@/components/ui/card";
+import { Check, FileText, User, Code, CircleAlert } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import BFSVisualizer from "./GraphVisualizer";
 
 interface TestCase {
   testId: string;
   input: {
     graph?: any;
     startNode?: any;
-    [key: string]: any;
+    [key: string]: any; // Allow for other input properties
   };
   output: any;
 }
@@ -38,9 +37,9 @@ function SidebarBattle({ question }: SidebarBattleProps) {
 
   const openPopout = () => {
     setIsPopoutOpen(true);
-    setKey(prev => prev + 1);
+    setKey((prev) => prev + 1);
   };
-  
+
   const closePopout = () => {
     setIsPopoutOpen(false);
   };
@@ -48,14 +47,14 @@ function SidebarBattle({ question }: SidebarBattleProps) {
   React.useEffect(() => {
     return () => {
       if (!isPopoutOpen) {
-        setKey(prev => prev + 1);
+        setKey((prev) => prev + 1);
       }
     };
   }, [isPopoutOpen]);
 
   // Format test case input/output for display
   const formatTestCase = (value: any): string => {
-    if (typeof value === 'object' && value !== null) {
+    if (typeof value === "object" && value !== null) {
       return JSON.stringify(value, null, 2);
     }
     return String(value);
@@ -77,28 +76,30 @@ function SidebarBattle({ question }: SidebarBattleProps) {
               <h2 className="font-medium text-white/90">{question.title}</h2>
             </div>
             {question.type === "graph" && (
-              <button 
+              <button
                 onClick={openPopout}
-                className="px-4 py-2 rounded bg-lime-500 hover:bg-lime-600 text-white">
+                className="px-4 py-2 rounded bg-lime-500 hover:bg-lime-600 text-white"
+              >
                 Demo
               </button>
             )}
           </div>
-          
+
           <div className="space-y-4 text-white/75">
-            <p className="leading-relaxed">
-              {question.description}
-            </p>
+            <p className="leading-relaxed">{question.description}</p>
 
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <Code size={16} className="text-lime-400" />
                 <h3 className="font-medium text-white/90">Examples:</h3>
               </div>
-              
+
               <div className="space-y-3">
                 {question.testCases.slice(0, 2).map((testCase) => (
-                  <div key={testCase.testId} className="bg-white/5 rounded-lg p-3 border border-white/10">
+                  <div
+                    key={testCase.testId}
+                    className="bg-white/5 rounded-lg p-3 border border-white/10"
+                  >
                     <div className="text-sm space-y-1">
                       <div className="text-white/60">Input:</div>
                       <pre className="font-mono text-purple-300 whitespace-pre-wrap break-words">
