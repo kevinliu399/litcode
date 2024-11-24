@@ -8,7 +8,7 @@ export default function Matchmaking() {
     const wsRef = useRef<WebSocket | null>(null);
 
     useEffect(() => {
-        const ws = new WebSocket("https://f13f-142-157-239-111.ngrok-free.app");
+        const ws = new WebSocket("https://28d6-142-157-239-111.ngrok-free.app/");
         wsRef.current = ws;
 
         ws.onopen = () => {

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template_string
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_cors import CORS
 from pymongo import MongoClient
@@ -14,13 +14,46 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
 
-# MongoDB connection with your connection string
+# Configure CORS with specific settings for ngrok
+CORS_ALLOWED_ORIGINS = [
+    "https://*.ngrok-free.app",  # Allow ngrok domains
+    "http://localhost:3000",     # Local development
+    "http://127.0.0.1:3000"     # Local development
+]
+
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key')
+
+# Update CORS settings specifically for ngrok
+CORS(app, resources={
+    r"/*": {
+        "origins": CORS_ALLOWED_ORIGINS,
+        "allow_headers": ["Content-Type", "Authorization"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "supports_credentials": True,
+        "max_age": 3600
+    }
+})
+
+# Configure SocketIO with optimized settings for ngrok
+socketio = SocketIO(
+    app,
+    cors_allowed_origins=CORS_ALLOWED_ORIGINS,
+    ping_timeout=10000,
+    ping_interval=1000,
+    async_mode='threading',
+    websocket=True,
+    logger=True,
+    engineio_logger=True,
+    always_connect=True,
+    manage_session=False,
+    cookie=False
+)
+
+# MongoDB setup
 client = MongoClient(os.getenv('MONGO_DB_KEY'))
-db = client['litcodedb']  # Your database name
-questions_collection = db['questions']  # Collection for questions
+db = client['litcodedb']
+questions_collection = db['questions']
 matches_collection = db['matches']
 users_collection = db['users']
 
@@ -73,7 +106,7 @@ class Match:
             return self.player1['id']
         elif p2_score > p1_score:
             return self.player2['id']
-        return None  # Draw
+        return None
 
     def to_dict(self):
         return {
@@ -86,6 +119,7 @@ class Match:
             'is_active': self.is_active
         }
 
+# Match management functions
 def start_match_timer(match_id, duration):
     def timer_callback():
         time.sleep(duration)
@@ -104,10 +138,8 @@ def end_match(match):
     match.is_active = False
     winner_id = match.get_winner()
     
-    # Save match result to database
     matches_collection.insert_one(match.to_dict())
     
-    # Notify both players
     socketio.emit('match_ended', {
         'winner_id': winner_id,
         'final_scores': {
@@ -116,28 +148,32 @@ def end_match(match):
         }
     }, room=match.match_id)
 
-    # Cleanup
     if match.match_id in game_state.active_matches:
         del game_state.active_matches[match.match_id]
 
 def get_random_question():
-    # Get random question from database matching the schema
     question = questions_collection.aggregate([{ '$sample': { 'size': 1 } }]).next()
-    # Convert ObjectId to string for JSON serialization
     question['_id'] = str(question['_id'])
     return question
+
+# Socket event handlers
+@socketio.on_error_default
+def default_error_handler(e):
+    print(f"SocketIO Error: {str(e)}")
+    socketio.emit('error', {'message': str(e)}, room=request.sid)
 
 @socketio.on('connect')
 def handle_connect():
     print(f"Client connected: {request.sid}")
+    print(f"Transport: {request.args.get('transport', 'unknown')}")
+    print(f"Headers: {request.headers}")
+    emit('connection_established', {'sid': request.sid})
 
 @socketio.on('join_queue')
 def handle_join_queue(data):
-    # Verify Clerk token here if needed
     player_id = data['player_id']
     player_name = data['player_name']
     
-    # Save/update user in database
     users_collection.update_one(
         {'_id': player_id},
         {'$set': {'name': player_name}},
@@ -154,18 +190,14 @@ def handle_join_queue(data):
         player1 = game_state.waiting_queue.pop(0)
         player2 = game_state.waiting_queue.pop(0)
         
-        # Get random question matching your schema
         question = get_random_question()
         
-        # Create new match
         match = Match(player1['player_id'], player2['player_id'], question)
         game_state.active_matches[match.match_id] = match
         
-        # Join both players to match room
         join_room(match.match_id, sid=player1['sid'])
         join_room(match.match_id, sid=player2['sid'])
         
-        # Send match details to both players
         match_data = {
             'match_id': match.match_id,
             'opponent': {
@@ -183,7 +215,6 @@ def handle_join_queue(data):
         }
         emit('match_found', match_data, room=player2['sid'])
         
-        # Start match timer
         start_match_timer(match.match_id, match.duration)
 
 @socketio.on('submit_result')
@@ -197,7 +228,6 @@ def handle_submit_result(data):
         match = game_state.active_matches[match_id]
         match.update_player_progress(player_id, tests_passed)
         
-        # Notify opponent about the result
         emit('opponent_progress', {
             'tests_passed': tests_passed,
             'total_tests': total_tests
@@ -206,15 +236,23 @@ def handle_submit_result(data):
 @socketio.on('disconnect')
 def handle_disconnect():
     print(f"Client disconnected: {request.sid}")
-    # Remove from queue if in queue
-    game_state.waiting_queue = [p for p in game_state.waiting_queue if p['sid'] != request.sid]
-    
-    # Handle active match disconnection
-    for match_id, match in game_state.active_matches.items():
-        if match.player1['id'] == request.sid or match.player2['id'] == request.sid:
-            # Could implement forfeit logic here
-            end_match(match)
-            break
+    try:
+        game_state.waiting_queue = [p for p in game_state.waiting_queue if p['sid'] != request.sid]
+        
+        for match_id, match in list(game_state.active_matches.items()):
+            if match.player1['id'] == request.sid or match.player2['id'] == request.sid:
+                end_match(match)
+                break
+    except Exception as e:
+        print(f"Error in disconnect handler: {str(e)}")
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000)
+    socketio.run(
+        app,
+        debug=True,
+        host='0.0.0.0',
+        port=5000,
+        allow_unsafe_werkzeug=True,
+        log_output=True,
+        use_reloader=False
+    )
