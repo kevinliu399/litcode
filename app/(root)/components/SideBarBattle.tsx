@@ -1,8 +1,8 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Check, FileText, User, Code, CircleAlert } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
-import BFSVisualizer from './GraphVisualizer';
-import SortingVisualizer from './SortingVisualizer';
+import { Card, CardContent } from "@/components/ui/card";
+import { Check, FileText, User, Code, CircleAlert } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import BFSVisualizer from "./GraphVisualizer";
+import SortingVisualizer from "./SortingVisualizer";
 
 function SidebarBattle() {
   const [isPopoutOpen, setIsPopoutOpen] = useState(false);
@@ -11,9 +11,9 @@ function SidebarBattle() {
   const openPopout = () => {
     setIsPopoutOpen(true);
     // Force BFSVisualizer to reinitialize when popout opens
-    setKey(prev => prev + 1);
+    setKey((prev) => prev + 1);
   };
-  
+
   const closePopout = () => {
     setIsPopoutOpen(false);
   };
@@ -22,7 +22,7 @@ function SidebarBattle() {
   useEffect(() => {
     return () => {
       if (!isPopoutOpen) {
-        setKey(prev => prev + 1);
+        setKey((prev) => prev + 1);
       }
     };
   }, [isPopoutOpen]);
@@ -37,16 +37,18 @@ function SidebarBattle() {
               <FileText size={18} className="text-lime-400" />
               <h2 className="font-medium text-white/90">Problem Description</h2>
             </div>
-            <button 
+            <button
               onClick={openPopout}
-              className="px-4 py-2 rounded bg-lime-500 hover:bg-lime-600 text-white">
+              className="px-4 py-2 rounded bg-lime-500 hover:bg-lime-600 text-white"
+            >
               Demo
             </button>
           </div>
-          
+
           <div className="space-y-4 text-white/75">
             <p className="leading-relaxed">
-              Write a program that takes a string as input and returns the number of vowels in the string.
+              Write a program that takes a string as input and returns the
+              number of vowels in the string.
             </p>
 
             <div className="space-y-2">
@@ -54,7 +56,7 @@ function SidebarBattle() {
                 <Code size={16} className="text-lime-400" />
                 <h3 className="font-medium text-white/90">Examples:</h3>
               </div>
-              
+
               <div className="space-y-3">
                 <div className="bg-white/5 rounded-lg p-3 border border-white/10">
                   <div className="text-sm space-y-1">
@@ -127,12 +129,12 @@ function SidebarBattle() {
               </h2>
               {/* <SortingVisualizer algorithm="bubble" /> */}
               <BFSVisualizer
-                width={10}               // Number of cells horizontally
-                height={10}              // Number of cells vertically
-                cellSize={30}            // Size of each cell in pixels
-                start={{ x: 0, y: 0 }}   // Starting position
-                end={{ x: 6, y: 6 }}   // Ending position
-            />
+                width={10} // Number of cells horizontally
+                height={10} // Number of cells vertically
+                cellSize={30} // Size of each cell in pixels
+                start={{ x: 0, y: 0 }} // Starting position
+                end={{ x: 6, y: 6 }} // Ending position
+              />
             </div>
           </div>
         </div>
