@@ -47,6 +47,15 @@ const Battle = () => {
     );
   }
 
+  useEffect(() => {
+    if (status === "in_game" && question) {
+      if (myProgress.tests_passed === question.testCases.length || 
+          opponentProgress.tests_passed === question.testCases.length) {
+        useGameStore.getState().setStatus("ended");
+      }
+    }
+  }, [myProgress.tests_passed, opponentProgress.tests_passed, question, status]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
