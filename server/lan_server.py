@@ -89,18 +89,29 @@ class GameState:
             queue[:] = [p for p in queue if p['sid'] != sid]
 
     def find_match(self, algorithm_type: str) -> tuple:
-        # For random type, check all queues
         if algorithm_type == 'random':
-            for queue_type, queue in self.waiting_queues.items():
-                if len(queue) >= 2:
-                    return queue.pop(0), queue.pop(0), queue_type
+            # Attempt to find a specific-type player first
+            for queue_type in ['graph', 'tree', 'array']:
+                if len(self.waiting_queues[queue_type]) >= 1 and len(self.waiting_queues['random']) >= 1:
+                    player1 = self.waiting_queues[queue_type].pop(0)
+                    player2 = self.waiting_queues['random'].pop(0)
+                    return player1, player2, queue_type  # Use specific type for the match
+            # If no specific-type players are available, match two random players
+            if len(self.waiting_queues['random']) >= 2:
+                player1 = self.waiting_queues['random'].pop(0)
+                player2 = self.waiting_queues['random'].pop(0)
+                return player1, player2, 'random'
+            return None, None, None
+        else:
+            # Specific-type player: Attempt to find another same-type player
+            queue = self.waiting_queues[algorithm_type]
+            if len(queue) >= 2:
+                player1 = queue.pop(0)
+                player2 = queue.pop(0)
+                return player1, player2, algorithm_type
+            # Do not match with different specific types
             return None, None, None
 
-        # For specific type, check only that queue
-        queue = self.waiting_queues[algorithm_type]
-        if len(queue) >= 2:
-            return queue.pop(0), queue.pop(0), algorithm_type
-        return None, None, None
 
 game_state = GameState()
 
@@ -250,7 +261,7 @@ def handle_join_queue(data):
         join_room(match.match_id, sid=player1['sid'])
         join_room(match.match_id, sid=player2['sid'])
         
-        match_data = {
+        match_data_player1 = {
             'match_id': match.match_id,
             'opponent': {
                 'id': player2['clerkId'],
@@ -259,16 +270,29 @@ def handle_join_queue(data):
             'question': question,
             'total_tests': len(question['testCases'])
         }
-        emit('match_found', match_data, room=player1['sid'])
+        emit('match_found', match_data_player1, room=player1['sid'])
         
-        match_data['opponent'] = {
-            'id': player1['clerkId'],
-            'name': player1['player_name']
+        match_data_player2 = {
+            'match_id': match.match_id,
+            'opponent': {
+                'id': player1['clerkId'],
+                'name': player1['player_name']
+            },
+            'question': question,
+            'total_tests': len(question['testCases'])
         }
-        emit('match_found', match_data, room=player2['sid'])
+        emit('match_found', match_data_player2, room=player2['sid'])
         
         print(f"Match created between {player1['player_name']} and {player2['player_name']} for {matched_type} algorithm")
         start_match_timer(match.match_id, match.duration)
+
+@socketio.on('leave_queue')
+def handle_leave_queue(data):
+    clerkId = data['clerkId']
+    game_state.remove_from_queue(request.sid)
+    print(f"Player {clerkId} left the queue.")
+    emit('queue_left', {'message': 'You have left the queue.'}, room=request.sid)
+
 
 @socketio.on('submit_result')
 def handle_submit_result(data):
