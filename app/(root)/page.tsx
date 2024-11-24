@@ -28,8 +28,8 @@ export default function Home() {
             >
               LitCode
             </h1>
-            <h3 className="text-center text-2xl font-semibold text-white">
-              Practice makes <span className="text-lime-400 italic">perfect</span>
+            <h3 className="text-center text-2xl font-semibold text-white font-mono">
+              Ignite your <span className="text-lime-400 italic">skills</span>
             </h3>
           </div>
           

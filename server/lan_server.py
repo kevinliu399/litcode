@@ -329,7 +329,7 @@ def handle_disconnect():
 def handle_code_submission(data):
     try:
         code = data['code']
-        print("CODE: ", code)
+        print(code)
         match_id = data['match_id']
         clerkId = data['clerkId']
         

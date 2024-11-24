@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from "next/navigation";
 import { Trophy, Home, Users } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,7 @@ interface GameOverModalProps {
 
 const GameOverModal: React.FC<GameOverModalProps> = ({ myProgress, opponentProgress }) => {
   const router = useRouter();
+  const [isVisible, setIsVisible] = useState(false);
   
   // Calculate winner
   const myScore = (myProgress.tests_passed / myProgress.total_tests) * 100;
@@ -23,25 +24,43 @@ const GameOverModal: React.FC<GameOverModalProps> = ({ myProgress, opponentProgr
   const isWinner = myScore > opponentScore;
   const isTie = myScore === opponentScore;
 
+  useEffect(() => {
+    // Trigger animation after component mount
+    const timer = setTimeout(() => setIsVisible(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,black,transparent)] opacity-20" />
+    <div className={`fixed inset-0 z-50 flex items-center justify-center
+      transition-all duration-300 ease-out
+      ${isVisible ? 'bg-black/90 backdrop-blur-sm' : 'bg-black/0 backdrop-blur-none'}`}>
+      <div className={`absolute inset-0 bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,black,transparent)]
+        transition-opacity duration-500 ease-out
+        ${isVisible ? 'opacity-20' : 'opacity-0'}`} />
       
-      <Card className="relative w-full max-w-lg bg-black/40 border border-white/10 backdrop-blur-md">
-        <div className="absolute -top-12 left-1/2 -translate-x-1/2">
+      <Card className={`relative w-full max-w-lg bg-black/40 border border-white/10 backdrop-blur-md
+        transition-all duration-500 ease-out
+        ${isVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'}`}>
+        <div className={`absolute -top-12 left-1/2 -translate-x-1/2
+          transition-all duration-500 delay-200 ease-out
+          ${isVisible ? 'opacity-100 -translate-y-0' : 'opacity-0 -translate-y-4'}`}>
           <div className="rounded-full p-6 bg-black/40 border border-white/10 backdrop-blur-md">
             <Trophy 
               size={32} 
-              className={`${isWinner ? 'text-lime-400' : isTie ? 'text-blue-400' : 'text-purple-400'}`}
+              className={`${isVisible ? 'animate-bounce' : ''} ${isWinner ? 'text-lime-400' : isTie ? 'text-blue-400' : 'text-purple-400'}`}
             />
           </div>
         </div>
 
         <CardHeader className="pt-12 pb-4">
-          <h2 className="text-3xl font-bold text-center text-white">
+          <h2 className={`text-3xl font-bold text-center text-white
+            transition-all duration-500 delay-300 ease-out
+            ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             {isWinner ? 'Victory!' : isTie ? "It's a Tie!" : 'Defeated!'}
           </h2>
-          <p className="text-white/60 text-center mt-2">
+          <p className={`text-white/60 text-center mt-2
+            transition-all duration-500 delay-400 ease-out
+            ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             {isWinner 
               ? 'Impressive coding skills!' 
               : isTie 
@@ -50,7 +69,9 @@ const GameOverModal: React.FC<GameOverModalProps> = ({ myProgress, opponentProgr
           </p>
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent className={`space-y-6
+          transition-all duration-500 delay-500 ease-out
+          ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <p className="text-sm text-white/60">Your Score</p>
@@ -78,7 +99,9 @@ const GameOverModal: React.FC<GameOverModalProps> = ({ myProgress, opponentProgr
           </div>
         </CardContent>
 
-        <CardFooter className="flex gap-4 pt-6">
+        <CardFooter className={`flex gap-4 pt-6
+          transition-all duration-500 delay-600 ease-out
+          ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <button
             onClick={() => router.push("/")}
             className="flex-1 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-3 rounded-lg border border-white/10 transition-colors"
