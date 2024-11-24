@@ -9,7 +9,7 @@ interface TestCase {
   input: {
     graph?: any;
     startNode?: any;
-    [key: string]: any; // Allow for other input properties
+    [key: string]: any;
   };
   output: any;
 }
@@ -29,6 +29,8 @@ interface SidebarBattleProps {
 function SidebarBattle({ question }: SidebarBattleProps) {
   const [isPopoutOpen, setIsPopoutOpen] = React.useState(false);
   const [key, setKey] = React.useState(0);
+  const [maxMyProgress, setMaxMyProgress] = React.useState(0);
+  const [maxOpponentProgress, setMaxOpponentProgress] = React.useState(0);
   
   const { 
     opponent, 
@@ -53,7 +55,15 @@ function SidebarBattle({ question }: SidebarBattleProps) {
     };
   }, [isPopoutOpen]);
 
-  // Format test case input/output for display
+  // Calculate and update max progress whenever current progress changes
+  React.useEffect(() => {
+    const currentMyProgress = getProgressPercentage(myProgress.tests_passed, myProgress.total_tests);
+    const currentOpponentProgress = getProgressPercentage(opponentProgress.tests_passed, opponentProgress.total_tests);
+
+    setMaxMyProgress(prev => Math.max(prev, currentMyProgress));
+    setMaxOpponentProgress(prev => Math.max(prev, currentOpponentProgress));
+  }, [myProgress, opponentProgress]);
+
   const formatTestCase = (value: any): string => {
     if (typeof value === "object" && value !== null) {
       return JSON.stringify(value, null, 2);
@@ -61,7 +71,6 @@ function SidebarBattle({ question }: SidebarBattleProps) {
     return String(value);
   };
 
-  // Calculate progress percentage
   const getProgressPercentage = (passed: number, total: number) => {
     return total > 0 ? Math.round((passed / total) * 100) : 0;
   };
@@ -137,15 +146,13 @@ function SidebarBattle({ question }: SidebarBattleProps) {
               <div className="flex items-center justify-between text-sm text-white/75">
                 <span>Your Progress</span>
                 <span className="font-medium text-lime-400">
-                  {getProgressPercentage(myProgress.tests_passed, myProgress.total_tests)}%
+                  {maxMyProgress}%
                 </span>
               </div>
               <div className="w-full bg-white/10 rounded-full h-2">
                 <div 
                   className="bg-lime-400 h-2 rounded-full transition-all duration-300"
-                  style={{ 
-                    width: `${getProgressPercentage(myProgress.tests_passed, myProgress.total_tests)}%` 
-                  }}
+                  style={{ width: `${maxMyProgress}%` }}
                 />
               </div>
               <div className="text-xs text-white/60 text-right">
@@ -158,15 +165,13 @@ function SidebarBattle({ question }: SidebarBattleProps) {
               <div className="flex items-center justify-between text-sm text-white/75">
                 <span>{opponent?.name || 'Opponent'}'s Progress</span>
                 <span className="font-medium text-purple-400">
-                  {getProgressPercentage(opponentProgress.tests_passed, opponentProgress.total_tests)}%
+                  {maxOpponentProgress}%
                 </span>
               </div>
               <div className="w-full bg-white/10 rounded-full h-2">
                 <div 
                   className="bg-purple-400 h-2 rounded-full transition-all duration-300"
-                  style={{ 
-                    width: `${getProgressPercentage(opponentProgress.tests_passed, opponentProgress.total_tests)}%` 
-                  }}
+                  style={{ width: `${maxOpponentProgress}%` }}
                 />
               </div>
               <div className="text-xs text-white/60 text-right">
