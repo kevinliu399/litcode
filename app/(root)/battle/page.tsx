@@ -6,6 +6,7 @@ import { Check, Hourglass, Swords } from "lucide-react";
 import SidebarBattle from "../components/SideBarBattle";
 import { Badge } from "@/components/ui/badge";
 import useGameStore from "../stores/gamestore";
+import GameOverModal from "../components/gameover";
 
 const Battle = () => {
   const router = useRouter();
@@ -20,11 +21,6 @@ const Battle = () => {
   } = useGameStore();
 
   useEffect(() => {
-    // Redirect if not in a game
-    if (status !== "in_game") {
-      router.push("/lobby");
-      return;
-    }
 
     // Timer countdown
     const interval = setInterval(() => {
@@ -106,37 +102,11 @@ const Battle = () => {
 
       {/* Game Over Modal */}
       {status === "ended" && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
-          <div className="bg-black border-2 border-gray-600 bg-opacity-50 rounded-lg p-6 w-96">
-            <h2 className="text-2xl font-bold mb-4">Game Over!</h2>
-            <div className="mb-6">
-              <p className="text-lg mb-2">Final Score:</p>
-              <p>
-                You: {myProgress.tests_passed}/{myProgress.total_tests} tests
-                passed
-              </p>
-              <p>
-                Opponent: {opponentProgress.tests_passed}/
-                {opponentProgress.total_tests} tests passed
-              </p>
-            </div>
-            <div className="flex justify-between">
-              <button
-                onClick={() => router.push("/")}
-                className="bg-lime-400 text-black px-4 py-2 rounded-md hover:bg-lime-500 transition"
-              >
-                Home
-              </button>
-              <button
-                onClick={() => router.push("/lobby")}
-                className="bg-lime-400 text-black px-4 py-2 rounded-md hover:bg-lime-500 transition"
-              >
-                Lobby
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        <GameOverModal 
+            myProgress={myProgress}
+            opponentProgress={opponentProgress}
+        />
+        )}
     </div>
   );
 };
