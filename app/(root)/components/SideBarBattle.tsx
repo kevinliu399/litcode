@@ -3,6 +3,7 @@ import { Check, FileText, User, Code, CircleAlert } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import BFSVisualizer from "./GraphVisualizer";
 import useGameStore from "../stores/gamestore";
+import GameOverModal from "./gameover";
 
 interface TestCase {
   testId: string;
@@ -31,6 +32,7 @@ function SidebarBattle({ question }: SidebarBattleProps) {
   const [key, setKey] = React.useState(0);
   const [maxMyProgress, setMaxMyProgress] = React.useState(0);
   const [maxOpponentProgress, setMaxOpponentProgress] = React.useState(0);
+  const [showGameOver, setShowGameOver] = React.useState(false);
   
   const { 
     opponent, 
@@ -46,6 +48,12 @@ function SidebarBattle({ question }: SidebarBattleProps) {
   const closePopout = () => {
     setIsPopoutOpen(false);
   };
+
+  React.useEffect(() => {
+    if ((myProgress.tests_passed === myProgress.total_tests && myProgress.total_tests > 0) || (opponentProgress.tests_passed === opponentProgress.total_tests && opponentProgress.total_tests > 0)) {
+      useGameStore.getState().setStatus("ended")
+    }
+  }, [myProgress]);
 
   React.useEffect(() => {
     return () => {
@@ -208,6 +216,12 @@ function SidebarBattle({ question }: SidebarBattleProps) {
             </div>
           </div>
         </div>
+      )}
+      {showGameOver && (
+        <GameOverModal 
+          myProgress={myProgress} 
+          opponentProgress={opponentProgress}
+        />
       )}
     </div>
   );

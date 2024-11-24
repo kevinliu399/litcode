@@ -129,7 +129,7 @@ const EditorComponent: React.FC<EditorProps> = ({
       // Submit to both Judge0 and WebSocket server
       console.log("submitting to judge0 and websocket")
       await Promise.all([
-        submitToJudge0(),
+        //submitToJudge0(),
         submitToWebSocket()
       ]);
     } catch (err: any) {
