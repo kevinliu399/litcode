@@ -135,7 +135,7 @@ def start_match_timer(match_id, duration):
 def end_match(match):
     if not match.is_active:
         return
-
+    print(f"Match {match.match_id} ended!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     match.is_active = False
     winner_id = match.get_winner()
     

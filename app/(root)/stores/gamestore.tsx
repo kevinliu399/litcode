@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Socket, io } from 'socket.io-client';
+import { useRouter } from 'next/navigation';
 
 interface Question {
     _id?: string;
@@ -49,28 +50,34 @@ const useGameStore = create<GameState>((set, get) => ({
     matchId: null,
     opponentProgress: { tests_passed: 0, total_tests: 0 },
     myProgress: { tests_passed: 0, total_tests: 0 },
-    timeRemaining: 1800,
-
+    timeRemaining: 10000,
     initializeSocket: () => {
-        if (get().socket?.connected) return;
-
-        const socket = io('10.121.128.78:5000');
-        
-        socket.on('connect', () => {
-            console.log('Connected to game server');
+      if (get().socket?.connected) return;
+      
+      const socket = io('10.121.128.78:5000', {
+        transports: ['websocket', 'polling'], // Explicitly specify transports
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+      });
+  
+      socket.on('connect', () => {
+        console.log('Connected to game server');
+      });
+  
+      socket.on('match_found', (data) => {
+        console.log('Match found:', data); // Debug log
+        set({
+          status: 'in_game',
+          question: data.question,
+          opponent: data.opponent,
+          matchId: data.match_id,
+          myProgress: { tests_passed: 0, total_tests: data.total_tests },
+          opponentProgress: { tests_passed: 0, total_tests: data.total_tests }
         });
 
-        socket.on('match_found', (data) => {
-            set({
-                status: 'in_game',
-                question: data.question,
-                opponent: data.opponent,
-                matchId: data.match_id,
-                myProgress: { tests_passed: 0, total_tests: data.total_tests },
-                opponentProgress: { tests_passed: 0, total_tests: data.total_tests }
-            });
-            // Redirect to battle page
-            window.location.href = '/battle';
+        const router = useRouter();
+        router.push('/battle');
         });
 
         socket.on('opponent_progress', (data) => {

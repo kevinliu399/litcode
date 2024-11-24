@@ -1,10 +1,24 @@
 'use client';
 import Image from "next/image";
+import { useEffect } from "react";
 import { Globe, ChevronRight } from "lucide-react";
 import AlgorithmSelector from "../components/SelectorAlgo"
+import { useRouter } from "next/navigation";
+import useGameStore from "../stores/gamestore";
 
 export default function LobbyPage() {
+    const router = useRouter();
+    const {status, initializeSocket} = useGameStore();
 
+    useEffect(() => {
+        initializeSocket();
+    }, [initializeSocket]);
+
+    useEffect(() => {
+        if (status === 'in_game') {
+            router.push('/battle');
+        }
+    }, [status, router]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br">
