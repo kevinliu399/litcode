@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Check, FileText, User, Code, CircleAlert } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import BFSVisualizer from "./GraphVisualizer";
+import useGameStore from "../stores/gamestore";
 
 interface TestCase {
   testId: string;
@@ -126,7 +127,7 @@ function SidebarBattle({ question }: SidebarBattleProps) {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Users size={18} className="text-lime-400" />
+                <User size={18} className="text-lime-400" />
                 <h2 className="font-medium text-white/90">Battle Progress</h2>
               </div>
             </div>
