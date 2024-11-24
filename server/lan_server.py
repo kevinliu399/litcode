@@ -10,6 +10,7 @@ from bson import ObjectId
 import os
 from dotenv import load_dotenv
 from typing import Dict, List
+from executor.code_executor import CodeExecutor
 
 # Load environment variables
 load_dotenv()
@@ -309,6 +310,7 @@ def handle_submit_result(data):
             'tests_passed': tests_passed,
             'total_tests': total_tests
         }, room=match_id, skip_sid=request.sid)
+        
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -322,6 +324,41 @@ def handle_disconnect():
                 break
     except Exception as e:
         print(f"Error in disconnect handler: {str(e)}")
+
+@socketio.on('submit_code')
+def handle_code_submission(data):
+    try:
+        code = data['code']
+        print("CODE: ", code)
+        match_id = data['match_id']
+        clerkId = data['clerkId']
+        
+        # Get the question from the database
+        match = game_state.active_matches[match_id]
+        question = questions_collection.find_one({'_id': ObjectId(match.question_id)})
+        
+        # Execute the code
+        executor = CodeExecutor()
+        results = executor.execute_code(code, question['testCases'])
+        
+        # Update match progress
+        handle_submit_result({
+            'match_id': match_id,
+            'clerkId': clerkId,
+            'tests_passed': results['passed'],
+            'total_tests': results['total']
+        })
+        
+        # Send results back to the client
+        emit('code_results', {
+            'passed': results['passed'],
+            'total': results['total'],
+            'errors': results['errors'],
+            'test_results': results['test_results']
+        })
+        
+    except Exception as e:
+        emit('error', {'message': f'Code execution error: {str(e)}'})
 
 if __name__ == '__main__':
     socketio.run(
