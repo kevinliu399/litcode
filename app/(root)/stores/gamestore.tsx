@@ -76,8 +76,6 @@ const useGameStore = create<GameState>((set, get) => ({
           opponentProgress: { tests_passed: 0, total_tests: data.total_tests }
         });
 
-        const router = useRouter();
-        router.push('/battle');
         });
 
         socket.on('opponent_progress', (data) => {
@@ -94,6 +92,16 @@ const useGameStore = create<GameState>((set, get) => ({
                 status: 'ended',
             }));
         });
+
+
+        socket.on('connect_error', (error) => {
+            console.error('Connection error:', error);
+        });
+  
+        socket.on('error', (error) => {
+            console.error('Socket error:', error);
+        });
+        
 
         set({ socket });
     },
