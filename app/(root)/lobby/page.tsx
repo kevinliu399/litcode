@@ -43,7 +43,7 @@ export default function LobbyPage() {
                     <div className="relative group">
                         <div className="absolute inset-0 bg-lime-400 rounded-lg blur opacity-30 group-hover:opacity-70 transition-opacity"></div>
                         <Image
-                            src="/demo5.png"
+                            src="/demo6.png"
                             alt="logo"
                             width={900}
                             height={900}

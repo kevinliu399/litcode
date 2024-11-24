@@ -9,6 +9,8 @@ from datetime import datetime
 from bson import ObjectId
 import os
 from dotenv import load_dotenv
+from typing import Dict, List
+from executor.code_executor import CodeExecutor
 
 # Load environment variables
 load_dotenv()
@@ -67,14 +69,55 @@ def home():
 
 class GameState:
     def __init__(self):
-        self.waiting_queue = []
+        # Separate queues for each algorithm type
+        self.waiting_queues = {
+            'graph': [],
+            'tree': [],
+            'array': [],
+            'random': []
+        }
         self.active_matches = {}
         self.match_timers = {}
+
+    def add_to_queue(self, player_data: dict, algorithm_type: str):
+        if algorithm_type in self.waiting_queues:
+            self.waiting_queues[algorithm_type].append(player_data)
+            return True
+        return False
+
+    def remove_from_queue(self, sid: str):
+        for queue in self.waiting_queues.values():
+            queue[:] = [p for p in queue if p['sid'] != sid]
+
+    def find_match(self, algorithm_type: str) -> tuple:
+        if algorithm_type == 'random':
+            # Attempt to find a specific-type player first
+            for queue_type in ['graph', 'tree', 'array']:
+                if len(self.waiting_queues[queue_type]) >= 1 and len(self.waiting_queues['random']) >= 1:
+                    player1 = self.waiting_queues[queue_type].pop(0)
+                    player2 = self.waiting_queues['random'].pop(0)
+                    return player1, player2, queue_type  # Use specific type for the match
+            # If no specific-type players are available, match two random players
+            if len(self.waiting_queues['random']) >= 2:
+                player1 = self.waiting_queues['random'].pop(0)
+                player2 = self.waiting_queues['random'].pop(0)
+                return player1, player2, 'random'
+            return None, None, None
+        else:
+            # Specific-type player: Attempt to find another same-type player
+            queue = self.waiting_queues[algorithm_type]
+            if len(queue) >= 2:
+                player1 = queue.pop(0)
+                player2 = queue.pop(0)
+                return player1, player2, algorithm_type
+            # Do not match with different specific types
+            return None, None, None
+
 
 game_state = GameState()
 
 class Match:
-    def __init__(self, player1_id, player2_id, question: dict, duration=1800):
+    def __init__(self, player1_id, player2_id, question: dict, algorithm_type: str, duration=1800):
         self.match_id = str(ObjectId())
         self.player1 = {
             'id': player1_id,
@@ -89,6 +132,7 @@ class Match:
             'completed': False
         }
         self.question_id = question['_id']
+        self.algorithm_type = algorithm_type
         self.start_time = datetime.utcnow()
         self.duration = duration
         self.is_active = True
@@ -115,6 +159,7 @@ class Match:
             'player1': self.player1,
             'player2': self.player2,
             'question_id': self.question_id,
+            'algorithm_type': self.algorithm_type,
             'start_time': self.start_time,
             'duration': self.duration,
             'is_active': self.is_active
@@ -135,7 +180,7 @@ def start_match_timer(match_id, duration):
 def end_match(match):
     if not match.is_active:
         return
-    print(f"Match {match.match_id} ended!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
     match.is_active = False
     winner_id = match.get_winner()
     
@@ -152,8 +197,16 @@ def end_match(match):
     if match.match_id in game_state.active_matches:
         del game_state.active_matches[match.match_id]
 
-def get_random_question():
-    question = questions_collection.aggregate([{ '$sample': { 'size': 1 } }]).next()
+def get_random_question(algorithm_type: str):
+    query = {}
+    if algorithm_type != 'random':
+        query['type'] = algorithm_type
+    
+    question = questions_collection.aggregate([
+        {'$match': query},
+        {'$sample': {'size': 1}}
+    ]).next()
+    
     question['_id'] = str(question['_id'])
     return question
 
@@ -166,18 +219,17 @@ def default_error_handler(e):
 @socketio.on('connect')
 def handle_connect():
     print(f"Client connected: {request.sid}")
-    print(f"Transport: {request.args.get('transport', 'unknown')}")
-    print(f"Headers: {request.headers}")
     emit('connection_established', {'sid': request.sid})
-    
+
 @socketio.on('join_queue')
 def handle_join_queue(data):
     clerkId = data['clerkId']
     player_name = data['player_name']
+    algorithm_type = data.get('algorithm_type', 'random')
     
-    # Update user document without using clerkId
+    # Update user document
     users_collection.update_one(
-        {'clerkId': clerkId},  # Changed from _id to clerkId
+        {'clerkId': clerkId},
         {
             '$set': {
                 'clerkId': clerkId,
@@ -188,27 +240,29 @@ def handle_join_queue(data):
         upsert=True
     )
     
-    game_state.waiting_queue.append({
+    player_data = {
         'sid': request.sid,
         'clerkId': clerkId,
         'player_name': player_name
-    })
+    }
     
-    print(f"Player {player_name} ({clerkId}) joined queue. Queue size: {len(game_state.waiting_queue)}")
+    game_state.add_to_queue(player_data, algorithm_type)
+    print(f"Player {player_name} ({clerkId}) joined {algorithm_type} queue.")
     
-    if len(game_state.waiting_queue) >= 2:
-        player1 = game_state.waiting_queue.pop(0)
-        player2 = game_state.waiting_queue.pop(0)
+    # Try to find a match
+    player1, player2, matched_type = game_state.find_match(algorithm_type)
+    
+    if player1 and player2:
+        # Get a question of the matched type
+        question = get_random_question(matched_type)
         
-        question = get_random_question()
-        
-        match = Match(player1['clerkId'], player2['clerkId'], question)
+        match = Match(player1['clerkId'], player2['clerkId'], question, matched_type)
         game_state.active_matches[match.match_id] = match
         
         join_room(match.match_id, sid=player1['sid'])
         join_room(match.match_id, sid=player2['sid'])
         
-        match_data = {
+        match_data_player1 = {
             'match_id': match.match_id,
             'opponent': {
                 'id': player2['clerkId'],
@@ -217,16 +271,29 @@ def handle_join_queue(data):
             'question': question,
             'total_tests': len(question['testCases'])
         }
-        emit('match_found', match_data, room=player1['sid'])
+        emit('match_found', match_data_player1, room=player1['sid'])
         
-        match_data['opponent'] = {
-            'id': player1['clerkId'],
-            'name': player1['player_name']
+        match_data_player2 = {
+            'match_id': match.match_id,
+            'opponent': {
+                'id': player1['clerkId'],
+                'name': player1['player_name']
+            },
+            'question': question,
+            'total_tests': len(question['testCases'])
         }
-        emit('match_found', match_data, room=player2['sid'])
+        emit('match_found', match_data_player2, room=player2['sid'])
         
-        print(f"Match created between {player1['player_name']} and {player2['player_name']}")
+        print(f"Match created between {player1['player_name']} and {player2['player_name']} for {matched_type} algorithm")
         start_match_timer(match.match_id, match.duration)
+
+@socketio.on('leave_queue')
+def handle_leave_queue(data):
+    clerkId = data['clerkId']
+    game_state.remove_from_queue(request.sid)
+    print(f"Player {clerkId} left the queue.")
+    emit('queue_left', {'message': 'You have left the queue.'}, room=request.sid)
+
 
 @socketio.on('submit_result')
 def handle_submit_result(data):
@@ -243,12 +310,13 @@ def handle_submit_result(data):
             'tests_passed': tests_passed,
             'total_tests': total_tests
         }, room=match_id, skip_sid=request.sid)
+        
 
 @socketio.on('disconnect')
 def handle_disconnect():
     print(f"Client disconnected: {request.sid}")
     try:
-        game_state.waiting_queue = [p for p in game_state.waiting_queue if p['sid'] != request.sid]
+        game_state.remove_from_queue(request.sid)
         
         for match_id, match in list(game_state.active_matches.items()):
             if match.player1['id'] == request.sid or match.player2['id'] == request.sid:
@@ -256,6 +324,41 @@ def handle_disconnect():
                 break
     except Exception as e:
         print(f"Error in disconnect handler: {str(e)}")
+
+@socketio.on('submit_code')
+def handle_code_submission(data):
+    try:
+        code = data['code']
+        print("CODE: ", code)
+        match_id = data['match_id']
+        clerkId = data['clerkId']
+        
+        # Get the question from the database
+        match = game_state.active_matches[match_id]
+        question = questions_collection.find_one({'_id': ObjectId(match.question_id)})
+        
+        # Execute the code
+        executor = CodeExecutor()
+        results = executor.execute_code(code, question['testCases'])
+        
+        # Update match progress
+        handle_submit_result({
+            'match_id': match_id,
+            'clerkId': clerkId,
+            'tests_passed': results['passed'],
+            'total_tests': results['total']
+        })
+        
+        # Send results back to the client
+        emit('code_results', {
+            'passed': results['passed'],
+            'total': results['total'],
+            'errors': results['errors'],
+            'test_results': results['test_results']
+        })
+        
+    except Exception as e:
+        emit('error', {'message': f'Code execution error: {str(e)}'})
 
 if __name__ == '__main__':
     socketio.run(
