@@ -76,6 +76,7 @@ const useGameStore = create<GameState>((set, get) => ({
         matchId: data.match_id,
         myProgress: { tests_passed: 0, total_tests: data.total_tests },
         opponentProgress: { tests_passed: 0, total_tests: data.total_tests },
+        timeRemaining: 10,
       });
     });
 
@@ -124,7 +125,7 @@ const useGameStore = create<GameState>((set, get) => ({
       matchId: null,
       opponentProgress: { tests_passed: 0, total_tests: 0 },
       myProgress: { tests_passed: 0, total_tests: 0 },
-      timeRemaining: 1800,
+      timeRemaining: 10,
     }),
 }));
 
