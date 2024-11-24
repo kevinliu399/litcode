@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from "next/navigation";
-import { Trophy, Home, Users } from 'lucide-react';
+import { Trophy, Home, Users, CircleX, Handshake } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 
@@ -30,6 +30,16 @@ const GameOverModal: React.FC<GameOverModalProps> = ({ myProgress, opponentProgr
     return () => clearTimeout(timer);
   }, []);
 
+  const renderIcon = () => {
+    if (isWinner) {
+      return <Trophy size={32} className={`${isVisible ? 'animate-bounce' : ''} text-yellow-400`} />;
+    } else if (isTie) {
+      return <Handshake size={32} className={`${isVisible ? 'animate-bounce' : ''} text-gray-400`} />;
+    } else {
+      return <CircleX size={32} className={`${isVisible ? 'animate-bounce' : ''} text-red-400`} />;
+    }
+  };
+
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center
       transition-all duration-300 ease-out
@@ -45,10 +55,7 @@ const GameOverModal: React.FC<GameOverModalProps> = ({ myProgress, opponentProgr
           transition-all duration-500 delay-200 ease-out
           ${isVisible ? 'opacity-100 -translate-y-0' : 'opacity-0 -translate-y-4'}`}>
           <div className="rounded-full p-6 bg-black/40 border border-white/10 backdrop-blur-md">
-            <Trophy 
-              size={32} 
-              className={`${isVisible ? 'animate-bounce' : ''} ${isWinner ? 'text-lime-400' : isTie ? 'text-blue-400' : 'text-purple-400'}`}
-            />
+            {renderIcon()}
           </div>
         </div>
 
