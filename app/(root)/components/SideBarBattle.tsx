@@ -1,14 +1,15 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Check, FileText, User, Code, CircleAlert } from 'lucide-react';
-import React, { useState, useEffect } from 'react';
+import { Check, FileText, Users, Code, CircleAlert } from 'lucide-react';
+import React from 'react';
 import BFSVisualizer from './GraphVisualizer';
+import useGameStore from '../stores/gamestore';
 
 interface TestCase {
   testId: string;
   input: {
     graph?: any;
     startNode?: any;
-    [key: string]: any;  // Allow for other input properties
+    [key: string]: any;
   };
   output: any;
 }
@@ -26,8 +27,14 @@ interface SidebarBattleProps {
 }
 
 function SidebarBattle({ question }: SidebarBattleProps) {
-  const [isPopoutOpen, setIsPopoutOpen] = useState(false);
-  const [key, setKey] = useState(0);
+  const [isPopoutOpen, setIsPopoutOpen] = React.useState(false);
+  const [key, setKey] = React.useState(0);
+  
+  const { 
+    opponent, 
+    opponentProgress, 
+    myProgress 
+  } = useGameStore();
 
   const openPopout = () => {
     setIsPopoutOpen(true);
@@ -38,7 +45,7 @@ function SidebarBattle({ question }: SidebarBattleProps) {
     setIsPopoutOpen(false);
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     return () => {
       if (!isPopoutOpen) {
         setKey(prev => prev + 1);
@@ -54,10 +61,15 @@ function SidebarBattle({ question }: SidebarBattleProps) {
     return String(value);
   };
 
+  // Calculate progress percentage
+  const getProgressPercentage = (passed: number, total: number) => {
+    return total > 0 ? Math.round((passed / total) * 100) : 0;
+  };
+
   return (
     <div className="flex flex-col space-y-4 w-screen px-4">
       {/* Problem Description Card */}
-      <Card className="border border-white/10 bg-white/5 backdrop-blur-sm max-h-[60vh]">
+      <Card className="border border-white/10 bg-white/5 backdrop-blur-sm max-h-[50vh]">
         <CardContent className="p-6 overflow-y-auto h-full">
           <div className="flex items-center justify-between mb-4 backdrop-blur-sm py-2 z-10">
             <div className="flex items-center space-x-2">
@@ -107,27 +119,56 @@ function SidebarBattle({ question }: SidebarBattleProps) {
         </CardContent>
       </Card>
 
-      {/* Opponent Card */}
+      {/* Battle Progress Card */}
       <Card className="border border-white/10 bg-white/5 backdrop-blur-sm">
         <CardContent className="p-6">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <User size={18} className="text-lime-400" />
-                <h2 className="font-medium text-white/90">Opponent Status</h2>
+                <Users size={18} className="text-lime-400" />
+                <h2 className="font-medium text-white/90">Battle Progress</h2>
               </div>
             </div>
 
-            <div className="flex items-center justify-between bg-white/5 rounded-lg p-3 border border-white/10">
-              <div className="flex items-center space-x-3">
-                <CircleAlert size={16} className="text-purple-400" />
-                <span className="text-sm text-white/75">Tests Passed</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Check size={16} className="text-lime-400" />
-                <span className="text-sm font-medium text-white/90">
-                  {`${question.testCases.length}/${question.testCases.length}`}
+            {/* Your Progress */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm text-white/75">
+                <span>Your Progress</span>
+                <span className="font-medium text-lime-400">
+                  {getProgressPercentage(myProgress.tests_passed, myProgress.total_tests)}%
                 </span>
+              </div>
+              <div className="w-full bg-white/10 rounded-full h-2">
+                <div 
+                  className="bg-lime-400 h-2 rounded-full transition-all duration-300"
+                  style={{ 
+                    width: `${getProgressPercentage(myProgress.tests_passed, myProgress.total_tests)}%` 
+                  }}
+                />
+              </div>
+              <div className="text-xs text-white/60 text-right">
+                {myProgress.tests_passed} / {myProgress.total_tests} tests passed
+              </div>
+            </div>
+
+            {/* Opponent Progress */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm text-white/75">
+                <span>{opponent?.name || 'Opponent'}'s Progress</span>
+                <span className="font-medium text-purple-400">
+                  {getProgressPercentage(opponentProgress.tests_passed, opponentProgress.total_tests)}%
+                </span>
+              </div>
+              <div className="w-full bg-white/10 rounded-full h-2">
+                <div 
+                  className="bg-purple-400 h-2 rounded-full transition-all duration-300"
+                  style={{ 
+                    width: `${getProgressPercentage(opponentProgress.tests_passed, opponentProgress.total_tests)}%` 
+                  }}
+                />
+              </div>
+              <div className="text-xs text-white/60 text-right">
+                {opponentProgress.tests_passed} / {opponentProgress.total_tests} tests passed
               </div>
             </div>
           </div>

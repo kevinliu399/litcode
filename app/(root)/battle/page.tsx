@@ -88,7 +88,6 @@ const Battle = () => {
                     variant="outline"
                     className="bg-white/5 border-white/10 px-4 py-2 text-sm hover:bg-white/10 transition-all cursor-default"
                 >
-                    <Check size={16} className="text-lime-400 mr-2" />
                     <span className="font-medium">
                         {question.testCases.length} total tests
                     </span>
