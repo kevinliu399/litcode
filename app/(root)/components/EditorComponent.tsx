@@ -33,6 +33,7 @@ const customTheme = {
 interface EditorProps {
   defaultValue?: string;
   language?: string;
+  onCodeSubmit?: (code: string) => void;  
 }
 
 interface ExecutionResult {
