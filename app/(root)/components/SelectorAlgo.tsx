@@ -38,7 +38,7 @@ const AlgorithmSelector = () => {
         setStatus('queuing');
         
         socket.emit('join_queue', {
-            player_id: user.id,
+            clerkId: user.id,
             player_name: user.fullName,
             algorithm_type: value
         });
@@ -51,7 +51,7 @@ const AlgorithmSelector = () => {
         setStatus('idle');
         
         socket.emit('leave_queue', {
-            player_id: user.id
+            clerkId: user.id
         });
     };
 

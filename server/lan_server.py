@@ -19,6 +19,7 @@ app = Flask(__name__)
 CORS_ALLOWED_ORIGINS = [
     "https://*.ngrok-free.app",  # Allow ngrok domains
     "http://localhost:3000",     # Local development
+    "http://localhost:3000",
     "http://127.0.0.1:3000"     # Local development
 ]
 
@@ -92,10 +93,10 @@ class Match:
         self.duration = duration
         self.is_active = True
 
-    def update_player_progress(self, player_id, tests_passed):
-        if self.player1['id'] == player_id:
+    def update_player_progress(self, clerkId, tests_passed):
+        if self.player1['id'] == clerkId:
             self.player1['tests_passed'] = tests_passed
-        elif self.player2['id'] == player_id:
+        elif self.player2['id'] == clerkId:
             self.player2['tests_passed'] = tests_passed
 
     def get_winner(self):
@@ -168,23 +169,32 @@ def handle_connect():
     print(f"Transport: {request.args.get('transport', 'unknown')}")
     print(f"Headers: {request.headers}")
     emit('connection_established', {'sid': request.sid})
-
+    
 @socketio.on('join_queue')
 def handle_join_queue(data):
-    player_id = data['player_id']
+    clerkId = data['clerkId']
     player_name = data['player_name']
     
+    # Update user document without using clerkId
     users_collection.update_one(
-        {'_id': player_id},
-        {'$set': {'name': player_name}},
+        {'clerkId': clerkId},  # Changed from _id to clerkId
+        {
+            '$set': {
+                'clerkId': clerkId,
+                'name': player_name,
+                'last_active': datetime.utcnow()
+            }
+        },
         upsert=True
     )
     
     game_state.waiting_queue.append({
         'sid': request.sid,
-        'player_id': player_id,
+        'clerkId': clerkId,
         'player_name': player_name
     })
+    
+    print(f"Player {player_name} ({clerkId}) joined queue. Queue size: {len(game_state.waiting_queue)}")
     
     if len(game_state.waiting_queue) >= 2:
         player1 = game_state.waiting_queue.pop(0)
@@ -192,7 +202,7 @@ def handle_join_queue(data):
         
         question = get_random_question()
         
-        match = Match(player1['player_id'], player2['player_id'], question)
+        match = Match(player1['clerkId'], player2['clerkId'], question)
         game_state.active_matches[match.match_id] = match
         
         join_room(match.match_id, sid=player1['sid'])
@@ -201,7 +211,7 @@ def handle_join_queue(data):
         match_data = {
             'match_id': match.match_id,
             'opponent': {
-                'id': player2['player_id'],
+                'id': player2['clerkId'],
                 'name': player2['player_name']
             },
             'question': question,
@@ -210,23 +220,24 @@ def handle_join_queue(data):
         emit('match_found', match_data, room=player1['sid'])
         
         match_data['opponent'] = {
-            'id': player1['player_id'],
+            'id': player1['clerkId'],
             'name': player1['player_name']
         }
         emit('match_found', match_data, room=player2['sid'])
         
+        print(f"Match created between {player1['player_name']} and {player2['player_name']}")
         start_match_timer(match.match_id, match.duration)
 
 @socketio.on('submit_result')
 def handle_submit_result(data):
     match_id = data['match_id']
-    player_id = data['player_id']
+    clerkId = data['clerkId']
     tests_passed = data['tests_passed']
     total_tests = data['total_tests']
     
     if match_id in game_state.active_matches:
         match = game_state.active_matches[match_id]
-        match.update_player_progress(player_id, tests_passed)
+        match.update_player_progress(clerkId, tests_passed)
         
         emit('opponent_progress', {
             'tests_passed': tests_passed,
