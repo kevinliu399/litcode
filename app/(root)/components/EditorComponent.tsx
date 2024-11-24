@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Editor, { OnMount } from '@monaco-editor/react';
 import axios from 'axios';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Terminal, Clock, CircuitBoard, AlertCircle } from 'lucide-react';
+import { Loader2, Terminal, Clock, CircuitBoard, AlertCircle, Check } from 'lucide-react';
+import { Socket, io } from 'socket.io-client';
+import useGameStore from '../stores/gamestore';
+import { useUser } from '@clerk/nextjs';
+
 const customTheme = {
   base: 'vs-dark',
   inherit: false,
@@ -29,11 +33,10 @@ const customTheme = {
     'editorIndentGuide.activeBackground': '#7FFF00' // Lime green for active guides
   }
 };
-
 interface EditorProps {
   defaultValue?: string;
   language?: string;
-  onCodeSubmit?: (code: string) => void;  
+  onCodeSubmit?: (code: string) => void;
 }
 
 interface ExecutionResult {
@@ -44,14 +47,67 @@ interface ExecutionResult {
   error: string | null;
 }
 
+interface TestResult {
+  passed: number;
+  total: number;
+  errors: string[];
+  test_results: Array<{
+    passed: boolean;
+    error?: string;
+  }>;
+}
+
 const EditorComponent: React.FC<EditorProps> = ({
   defaultValue = '# Write your Python code here\n',
   language = 'python',
 }) => {
   const [code, setCode] = useState<string>(defaultValue);
   const [result, setResult] = useState<ExecutionResult | null>(null);
+  const [testResults, setTestResults] = useState<TestResult | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useUser();
+
+  // Get required state and actions from game store
+  const {
+    socket,
+    matchId,
+    updateProgress,
+    myProgress,
+    opponentProgress,
+  } = useGameStore();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    // Handle code execution results
+    const handleCodeResults = (results: TestResult) => {
+      setTestResults(results);
+      setIsExecuting(false);
+      
+      // Update progress in game store
+      updateProgress('me', {
+        tests_passed: results.passed,
+        total_tests: results.total,
+      });
+    };
+
+    // Handle execution errors
+    const handleExecutionError = (errorData: { message: string }) => {
+      setError(errorData.message);
+      setIsExecuting(false);
+    };
+
+    // Set up socket listeners
+    socket.on('code_results', handleCodeResults);
+    socket.on('error', handleExecutionError);
+
+    // Cleanup listeners on unmount
+    return () => {
+      socket.off('code_results', handleCodeResults);
+      socket.off('error', handleExecutionError);
+    };
+  }, [socket, updateProgress]);
 
   const handleEditorMount: OnMount = (editor, monaco) => {
     monaco.editor.defineTheme('custom-theme', customTheme);
@@ -59,55 +115,114 @@ const EditorComponent: React.FC<EditorProps> = ({
   };
 
   const executeCode = async () => {
+    if (!socket || !matchId) {
+      setError('Game session not initialized');
+      return;
+    }
+
     setIsExecuting(true);
     setError(null);
     setResult(null);
+    setTestResults(null);
 
     try {
-      const submitResponse = await axios.post('/api/judge_submit', {
-        source_code: code,
-        language_id: 100,
-        stdin: '',
-      });
-
-      const { token } = submitResponse.data;
-      const pollInterval = 1000;
-      const maxAttempts = 30;
-      let attempts = 0;
-
-      const pollResult = async () => {
-        attempts++;
-        const response = await axios.get(`/api/judge_submit?token=${token}`);
-        const { status, output, error, executionTime, memoryUsage } = response.data;
-
-        if (status === 'Processing' || status === 'In Queue') {
-          if (attempts >= maxAttempts) {
-            throw new Error('Execution timed out after 30 seconds');
-          }
-          setTimeout(pollResult, pollInterval);
-        } else {
-          setIsExecuting(false);
-          setResult({
-            status,
-            executionTime,
-            memoryUsage,
-            output,
-            error
-          });
-        }
-      };
-
-      await pollResult();
+      // Submit to both Judge0 and WebSocket server
+      console.log("submitting to judge0 and websocket")
+      await Promise.all([
+        submitToJudge0(),
+        submitToWebSocket()
+      ]);
     } catch (err: any) {
       setIsExecuting(false);
       setError(err.response?.data?.error || err.message);
     }
   };
 
+  const submitToJudge0 = async () => {
+    const submitResponse = await axios.post('/api/judge_submit', {
+      source_code: code,
+      language_id: 100,
+      stdin: '',
+    });
+
+    const { token } = submitResponse.data;
+    const pollInterval = 1000;
+    const maxAttempts = 30;
+    let attempts = 0;
+
+    const pollResult = async () => {
+      attempts++;
+      const response = await axios.get(`/api/judge_submit?token=${token}`);
+      const { status, output, error, executionTime, memoryUsage } = response.data;
+
+      if (status === 'Processing' || status === 'In Queue') {
+        if (attempts >= maxAttempts) {
+          throw new Error('Execution timed out after 30 seconds');
+        }
+        setTimeout(pollResult, pollInterval);
+      } else {
+        setResult({
+          status,
+          executionTime,
+          memoryUsage,
+          output,
+          error
+        });
+      }
+    };
+
+    await pollResult();
+  };
+
+  const submitToWebSocket = async () => {
+    if (!socket || !matchId || !user) {
+      throw new Error('Game session not initialized');
+    }
+
+    socket.emit('submit_code', {
+      code,
+      match_id: matchId,
+      clerkId: user.id
+    });
+  };
+
   return (
     <div className="w-full max-w-4xl px-6">
       <Card className="border border-white/10 bg-white/5 backdrop-blur-sm">
         <CardContent className="p-6">
+          {/* Progress Bar Section */}
+          <div className="mb-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-white/80">Your Progress</span>
+              <span className="text-lime-400">
+                {myProgress.tests_passed}/{myProgress.total_tests} Tests Passed
+              </span>
+            </div>
+            <div className="w-full bg-white/10 rounded-full h-2">
+              <div
+                className="bg-lime-400 h-2 rounded-full transition-all duration-300"
+                style={{
+                  width: `${(myProgress.tests_passed / myProgress.total_tests) * 100}%`
+                }}
+              />
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <span className="text-white/80">Opponent's Progress</span>
+              <span className="text-purple-400">
+                {opponentProgress.tests_passed}/{opponentProgress.total_tests} Tests Passed
+              </span>
+            </div>
+            <div className="w-full bg-white/10 rounded-full h-2">
+              <div
+                className="bg-purple-400 h-2 rounded-full transition-all duration-300"
+                style={{
+                  width: `${(opponentProgress.tests_passed / opponentProgress.total_tests) * 100}%`
+                }}
+              />
+            </div>
+          </div>
+
           {/* Editor Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
@@ -152,19 +267,55 @@ const EditorComponent: React.FC<EditorProps> = ({
               )}
             </Button>
 
+            {/* Test Results Section */}
+            {testResults && (
+              <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+                <div className="flex items-center space-x-2 mb-4">
+                  <Check size={18} className="text-lime-400" />
+                  <span className="text-white/80 font-medium">
+                    Test Results: {testResults.passed}/{testResults.total} Passed
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {testResults.test_results.map((test, index) => (
+                    <div
+                      key={index}
+                      className={`p-3 rounded-md ${
+                        test.passed
+                          ? 'bg-lime-400/10 border-lime-400/20'
+                          : 'bg-red-500/10 border-red-500/20'
+                      } border`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm ${
+                          test.passed ? 'text-lime-400' : 'text-red-400'
+                        }`}>
+                          Test Case {index + 1}
+                        </span>
+                        {test.error && (
+                          <span className="text-red-400 text-sm">{test.error}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Error Display */}
             {error && (
               <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
                 <div className="flex items-center space-x-2 mb-2">
                   <AlertCircle size={18} className="text-red-400" />
-                  <span className="text-red-400 font-medium">Execution Error</span>
+                  <span className="text-red-400 font-medium">Error</span>
                 </div>
                 <pre className="text-red-400/90 text-sm font-mono whitespace-pre-wrap">{error}</pre>
               </div>
             )}
 
+            {/* Judge0 Results */}
             {result && !error && (
               <div className="space-y-4 p-4 border border-white/10 rounded-lg bg-white/5">
-                {/* Status Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2">
@@ -183,12 +334,15 @@ const EditorComponent: React.FC<EditorProps> = ({
                   </span>
                 </div>
 
-                {/* Output */}
                 <div className="space-y-2">
-                  <div className="text-white/80 font-medium text-sm">Output:</div>
-                  <pre className="p-4 bg-black/40 rounded-md text-white/90 text-sm font-mono whitespace-pre-wrap border border-white/5">
-                    {result.output || 'No output'}
-                  </pre>
+                  {result.output && (
+                    <>
+                      <div className="text-white/80 font-medium text-sm">Output:</div>
+                      <pre className="p-4 bg-black/40 rounded-md text-white/90 text-sm font-mono whitespace-pre-wrap border border-white/5">
+                        {result.output}
+                      </pre>
+                    </>
+                  )}
                   
                   {result.error && (
                     <>
